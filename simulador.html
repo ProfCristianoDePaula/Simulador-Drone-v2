@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mini 4 Lab — Simulador RC 2</title>
+<link rel="stylesheet" href="/src/styles/simulator.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Mini 4 Lab · RC 2</h1>
+      <p>Simulador didático • voo virtual sobre imagens de satélite • nenhum comando enviado ao drone</p>
+    </div>
+    <div class="actions">
+      <button data-act="locate">Minha localização</button>
+      <button data-act="guide" class="primary">Guia 200 m / 20 km</button>
+      <button data-act="panel:Ajuda">Como usar</button>
+      <button data-act="reset">Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="controller">
+    <div class="shoulders">
+      <label>Dial esquerdo · inclinação do gimbal
+        <input id="gimbal" aria-label="Inclinação do gimbal" type="range"
+               min="-90" max="60" value="-45">
+      </label>
+      <label>Dial direito · zoom
+        <input id="zoom" aria-label="Zoom da câmera" type="range"
+               min="1" max="3" step=".1" value="1">
+      </label>
+    </div>
+
+    <div class="hardware">
+      <div class="stickBox">
+        <div id="leftStick" class="stick" role="group"
+             aria-label="Manete esquerdo: subir, descer e girar">
+          <div class="knob"></div>
+        </div>
+        ALTURA / GIRO · W A S D
+      </div>
+
+      <div class="centerHardware">
+        <div class="modeSwitch" aria-label="Modo de voo">
+          <button data-mode="Cine" title="Cine">C</button>
+          <button data-mode="Normal" class="active" title="Normal">N</button>
+          <button data-mode="Sport" title="Sport">S</button>
+        </div>
+        <div class="hardwareButtons">
+          <button id="brakeHardware" title="Toque: pausa. Segure: RTH"
+                  aria-label="Pausa ou retorno ao manter pressionado">Ⅱ / H</button>
+          <button data-act="power" title="Liga/desliga a simulação"
+                  aria-label="Liga ou desliga a simulação">⏻</button>
+        </div>
+        <div class="brand">RC 2 · TRAINING</div>
+      </div>
+
+      <div class="stickBox">
+        <div id="rightStick" class="stick" role="group"
+             aria-label="Manete direito: avançar, recuar e mover para os lados">
+          <div class="knob"></div>
+        </div>
+        DESLOCAMENTO · SETAS
+      </div>
+    </div>
+
+    <div id="screen" class="screen">
+      <div id="view3d"></div>
+      <div id="flightGeo">Voo sobre satélite · aguardando GPS</div>
+      <a id="flightCredit" href="https://goto.arcgisonline.com/maps/World_Imagery" target="_blank" rel="noopener noreferrer">Esri · Vantor · Earthstar Geographics · GIS Community</a>
+
+      <div id="mapBox">
+        <canvas id="mapCanvas" aria-label="Mapa interativo da área de treinamento"></canvas>
+        <div id="mapCaption" role="status">Aguardando localização</div>
+        <a id="mapCredit" href="https://goto.arcgisonline.com/maps/World_Imagery" target="_blank" rel="noopener noreferrer">Imagem: Esri, Vantor, Earthstar Geographics e comunidade GIS</a>
+        <div id="mapTools">
+          <button data-act="map-in" aria-label="Aproximar mapa">＋</button>
+          <button data-act="map-out" aria-label="Afastar mapa">−</button>
+          <button data-act="locate" title="Usar GPS do dispositivo">GPS</button>
+          <button data-act="map-center" aria-label="Centralizar drone">◎</button>
+          <button data-act="panel:Waypoints">WP</button>
+        </div>
+      </div>
+
+      <div class="hud">
+        <div id="gridOverlay"></div>
+        <div class="hudTop">
+          <button id="modeHud" data-act="panel:Control">N</button>
+          <span id="status">Inicializando…</span>
+          <button id="gpsHud" data-act="panel:GPS">GPS 24</button>
+          <button id="sensorHud" data-act="panel:Sensores">Sensores</button>
+          <button id="linkHud" data-act="panel:Transmission">O4</button>
+          <button id="batteryHud" data-act="panel:Bateria">100%</button>
+          <button data-act="panel:Safety" aria-label="Abrir configurações">•••</button>
+        </div>
+
+        <div class="hudLeft">
+          <button id="takeoffButton" data-act="takeoff">↑ Decolar</button>
+          <button data-act="rth" title="Retornar à origem">H RTH</button>
+          <button data-act="panel:Waypoints">WP</button>
+          <button data-act="swap">Mapa ⇄</button>
+        </div>
+
+        <div class="hudRight">
+          <button data-act="panel:Camera">⚙</button>
+          <button id="recordButton" data-act="record" aria-label="Iniciar ou parar gravação"></button>
+          <button data-act="photo" title="Baixar foto da cena">Foto</button>
+          <button data-act="panel:QuickShots">QS</button>
+          <button data-act="panel:ActiveTrack">AT</button>
+        </div>
+
+        <div class="cross">＋</div>
+        <div id="targetBox" hidden><span>ALVO</span></div>
+
+        <div class="hudBottom">
+          <div class="telemetry">
+            <span>H <b id="h">0.0</b> m</span>
+            <span>D <b id="d">0.0</b> m</span>
+            <span><b id="speed">0.0</b> m/s</span>
+          </div>
+          <div id="cameraInfo">SIM · 1×<br>Gimbal −15°</div>
+        </div>
+      </div>
+
+      <div id="toast" role="status" hidden></div>
+      <div id="boot">
+        <div>
+          <h2>Carregando o simulador 3D…</h2>
+          <p>É necessário acesso à internet para carregar Three.js.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottomHardware">
+      <button data-act="center-gimbal">C1 · Centralizar gimbal</button>
+      <span>LAYOUT DIDÁTICO • PROF. CRISTIANO DE PAULA • SENAI JAÚ - CFP 7.90</span>
+      <button data-act="swap">C2 · Câmera / mapa</button>
+    </div>
+  </div>
+
+  <div class="helpbar">
+    <p>
+      <kbd>W/S</kbd> altura · <kbd>A/D</kbd> giro · <kbd>↑↓←→</kbd> deslocamento<br>
+      <kbd>Espaço</kbd> pausa · <kbd>R</kbd> RTH · <kbd>P</kbd> foto ·
+      <kbd>M</kbd> mapa · manetes aceitam mouse e toque simultâneo.
+    </p>
+    <div class="actions">
+      <button id="pauseButton" data-act="pause">Pausar</button>
+      <button data-act="panel:Calibração">Calibração</button>
+      <button data-act="panel:Fontes">Fontes e limitações</button>
+    </div>
+  </div>
+</div>
+
+<dialog id="settings">
+  <div class="dialogHead">
+    <h2 id="panelTitle">Configurações</h2>
+    <button data-act="close" aria-label="Fechar configurações">✕</button>
+  </div>
+  <div id="tabs" class="tabs"></div>
+  <div id="panel" class="panel"></div>
+</dialog>
+
+
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

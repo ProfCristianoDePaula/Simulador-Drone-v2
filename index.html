@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101c26">
+  <meta name="description" content="Pratique pilotagem de drone no Mini 4 Lab. Explore o simulador livre, os controles de voo e os recursos de câmera diretamente no navegador.">
+  <title>Mini 4 Lab — Sua próxima decolagem começa aqui</title>
+  <link rel="stylesheet" href="/src/styles/login.css">
+</head>
+<body>
+  <main class="entry">
+    <section class="access" aria-labelledby="login-title">
+      <a class="brand" href="/" aria-label="Mini 4 Lab, página inicial"><span class="brand-icon" aria-hidden="true">✣</span> MINI 4 <span class="brand-light">LAB</span></a>
+      <div class="login-content">
+        <span class="eyebrow">ÁREA DO ALUNO</span>
+        <h1 id="login-title">Pronto para<br>o próximo voo?</h1>
+        <p class="intro">Seu espaço para aprender, praticar e evoluir na pilotagem de drones.</p>
+        <form id="login-form" aria-describedby="auth-status">
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" autocomplete="username" placeholder="seu@email.com" required>
+          <div class="password-label"><label for="password">Senha</label></div>
+          <div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required><button id="toggle-password" type="button" aria-controls="password" aria-pressed="false">Mostrar</button></div>
+          <button class="login-button" type="submit" disabled>Entrar na minha conta <span aria-hidden="true">↗</span></button>
+          <p id="auth-status" class="auth-status" role="status">A área do aluno está em preparação. O login será liberado após a integração com o Supabase.</p>
+        </form>
+        <div class="free-access"><span>Quer conhecer primeiro?</span><a href="/simulador.html">Experimente o voo livre <span aria-hidden="true">→</span></a></div>
+      </div>
+      <footer class="access-footer"><span class="status-dot" aria-hidden="true"></span> Aprendizado em solo. Confiança no ar.</footer>
+    </section>
+    <section class="presentation" aria-labelledby="presentation-title">
+      <div class="topline"><span>SIMULADOR DE PILOTAGEM</span><span class="version">MINI 4 LAB / RC 2</span></div>
+      <div class="pitch"><span class="tag"><span class="status-dot" aria-hidden="true"></span> SEU PRIMEIRO VOO COMEÇA AQUI</span><h2 id="presentation-title">Mais prática.<br>Mais controle.<br><span>Novos horizontes.</span></h2><p>Assuma os manetes e explore a pilotagem de um drone em um ambiente virtual. Treine movimentos, ajuste a câmera e descubra novas perspectivas, direto no navegador.</p></div>
+      <div class="flight-art" aria-hidden="true">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="crosshair"></div>
+        <div class="flight-label label-top">AMBIENTE VIRTUAL <span>●</span></div>
+        <svg class="drone" viewBox="0 0 600 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="body" x1="240" y1="80" x2="360" y2="220" gradientUnits="userSpaceOnUse"><stop stop-color="#edf4f3"/><stop offset="1" stop-color="#788e95"/></linearGradient></defs>
+          <path d="M271 127L158 76M330 127L443 76M268 173L153 222M332 173L449 222" stroke="#879ca2" stroke-width="19" stroke-linecap="round"/>
+          <path d="M271 124L158 73M330 124L443 73M268 170L153 219M332 170L449 219" stroke="#c1d0d2" stroke-width="8" stroke-linecap="round"/>
+          <g stroke="#7bd6b1" stroke-opacity=".25"><ellipse cx="150" cy="73" rx="95" ry="29"/><ellipse cx="450" cy="73" rx="95" ry="29"/><ellipse cx="150" cy="220" rx="95" ry="29"/><ellipse cx="450" cy="220" rx="95" ry="29"/></g>
+          <g stroke="#adbec1" stroke-width="10" stroke-linecap="round"><path d="M80 60L220 86M381 87L519 59M81 234L219 206M381 207L519 233"/></g>
+          <g fill="#dce5e5"><circle cx="150" cy="73" r="14"/><circle cx="450" cy="73" r="14"/><circle cx="150" cy="220" r="14"/><circle cx="450" cy="220" r="14"/></g>
+          <path d="M278 82Q300 71 322 82L346 144L332 197Q300 214 268 197L254 144Z" fill="url(#body)"/>
+          <path d="M282 96L273 141H327L318 96" stroke="#61767d" stroke-width="2"/><rect x="280" y="185" width="40" height="29" rx="9" fill="#526970"/><circle cx="300" cy="203" r="13" fill="#182f3b"/><circle cx="300" cy="203" r="7" fill="#4ba393"/><circle cx="303" cy="200" r="3" fill="#b4f4d8"/>
+          <path d="M269 152H277M323 152H331" stroke="#60e2ac" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div class="flight-label label-bottom">CONTROLE VIRTUAL <span>VOO LIVRE</span></div>
+      </div>
+      <div class="features"><div><span>01 / PILOTAGEM</span><strong>Você no controle</strong><p>Manetes virtuais ou teclado.</p></div><div><span>02 / EXPLORAÇÃO</span><strong>Uma nova perspectiva</strong><p>Câmera, gimbal e mapa.</p></div><div><span>03 / PRÁTICA</span><strong>No seu ritmo</strong><p>Voo livre, sem login.</p></div></div>
+      <div class="cta-row"><a class="primary-cta" href="/simulador.html">Faça uma simulação de voo <span aria-hidden="true">↗</span></a><span>Grátis para explorar.<br>Sem cadastro para começar.</span></div>
+      <p class="simulation-note">Simulação didática. Nenhum comando é enviado a um drone real.</p>
+    </section>
+  </main>
+  <script type="module" src="/src/ui/login.js"></script>
+</body>
+</html>
