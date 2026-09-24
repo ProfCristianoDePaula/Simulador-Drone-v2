@@ -17,13 +17,17 @@
         <h1 id="login-title">Pronto para<br>o próximo voo?</h1>
         <p class="intro">Seu espaço para aprender, praticar e evoluir na pilotagem de drones.</p>
         <form id="login-form" aria-describedby="auth-status">
+          <div id="name-field" hidden><label for="full-name">Nome completo</label><input id="full-name" name="full-name" autocomplete="name" maxlength="120"></div>
           <label for="email">E-mail</label>
           <input id="email" name="email" type="email" autocomplete="username" placeholder="seu@email.com" required>
           <div class="password-label"><label for="password">Senha</label></div>
           <div class="password-field"><input id="password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required><button id="toggle-password" type="button" aria-controls="password" aria-pressed="false">Mostrar</button></div>
           <button class="login-button" type="submit" disabled>Entrar na minha conta <span aria-hidden="true">↗</span></button>
-          <p id="auth-status" class="auth-status" role="status">A área do aluno está em preparação. O login será liberado após a integração com o Supabase.</p>
+          <p id="auth-status" class="auth-status" role="status">Preparando acesso seguro…</p>
         </form>
+        <button id="signup-toggle" class="auth-link" type="button">Ainda não tenho conta</button>
+        <button id="google-login" class="google-button" type="button" disabled>Continuar com Google</button>
+        <p id="google-status" class="auth-status" role="status">Verificando disponibilidade do Google…</p>
         <div class="free-access"><span>Quer conhecer primeiro?</span><a href="/simulador.html">Experimente o voo livre <span aria-hidden="true">→</span></a></div>
       </div>
       <footer class="access-footer"><span class="status-dot" aria-hidden="true"></span> Aprendizado em solo. Confiança no ar.</footer>
@@ -52,6 +56,6 @@
       <p class="simulation-note">Simulação didática. Nenhum comando é enviado a um drone real.</p>
     </section>
   </main>
-  <script type="module" src="/src/ui/login.js"></script>
+  <script type="module" src="/src/ui/auth.js"></script>
 </body>
 </html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Área de ensino — Mini 4 Lab</title><link rel="stylesheet" href="/src/styles/dashboard.css"></head>
+<body>
+  <header><a class="brand" href="/">✣ MINI 4 LAB</a><nav><a href="/simulador.html">Simulador livre ↗</a><button id="logout">Sair</button></nav></header>
+  <main>
+    <p class="eyebrow" id="role-label">ÁREA DE ENSINO</p><h1 id="welcome">Carregando sua conta…</h1>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <section id="setup" hidden class="card"><h2>Preparação do banco necessária</h2><p>Seu login funcionou, mas não foi possível carregar o perfil. O administrador deve aplicar a migração do banco antes de usar turmas e permissões.</p><button id="retry">Tentar novamente</button></section>
+    <div id="workspace" hidden>
+      <div class="grid">
+        <section class="card" id="student-actions" hidden><h2>Entrar em uma turma</h2><p>Peça o código ao seu professor.</p><form id="join-form"><label for="class-code">Código da turma</label><input id="class-code" required maxlength="12" minlength="12" pattern="[A-Fa-f0-9]{12}" autocomplete="off" placeholder="Código de 12 caracteres"><button>Entrar na turma</button></form></section>
+        <section class="card" id="teacher-actions" hidden><h2>Criar turma</h2><form id="create-form"><label for="class-name">Nome da turma</label><input id="class-name" required maxlength="100" placeholder="Pilotagem de drones — Turma A"><button>Criar turma</button></form></section>
+        <section class="card"><h2>Pratique no voo livre</h2><p>Explore os controles, a câmera e as automações do simulador. O voo livre não gera nota.</p><a class="button" href="/simulador.html">Iniciar simulação ↗</a></section>
+      </div>
+      <section><div class="section-heading"><h2>Turmas</h2><button id="refresh">Atualizar</button></div><div id="classes" class="grid"></div></section>
+      <section id="roster-section" hidden class="card"><h2 id="roster-title">Alunos da turma</h2><p id="invite-code"></p><div class="actions"><button id="rotate-code">Renovar código</button><button id="toggle-enrollment">Pausar entrada por código</button></div><form id="add-form"><label for="student-email">Adicionar aluno já cadastrado pelo e-mail</label><div class="inline"><input id="student-email" type="email" required placeholder="aluno@email.com"><button>Adicionar</button></div></form><ul id="roster"></ul></section>
+      <section id="admin-section" hidden class="card"><h2>Administração global</h2><p>Busque um usuário pelo e-mail para alterar seu perfil. Apenas superadmins podem atribuir permissões.</p><form id="admin-search"><label for="search-email">E-mail do usuário</label><div class="inline"><input id="search-email" type="email" required><button>Buscar usuário</button></div></form><div id="admin-result"></div></section>
+      <section><h2>Trilha de missões</h2><p>Dez missões de até 100 pontos cada. Os cenários avaliados ainda estão em desenvolvimento.</p><div id="missions" class="grid mission-grid"></div></section>
+    </div>
+  </main><script type="module" src="/src/ui/dashboard.js"></script>
+</body></html>

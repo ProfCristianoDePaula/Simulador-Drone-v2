@@ -6,7 +6,7 @@ Refatoração do Mini 4 Lab existente, preservando o simulador e seus controles.
 
 Node.js 20 ou superior. `npm run dev` abre o servidor em http://localhost:5173.
 Não abra index.html por file://: a aplicação usa módulos JavaScript.
-Não há dependências npm nesta etapa. Three.js 0.160.1 é carregado de CDN, com fallback; imagens de satélite também exigem conexão. WebGL é necessário e vídeo depende de MediaRecorder.
+Execute `npm ci` para instalar ferramentas de desenvolvimento e testes. Three.js 0.160.1 e Supabase JS 2.57.4 são carregados de CDN; imagens de satélite também exigem conexão. WebGL é necessário e vídeo depende de MediaRecorder.
 
 `npm run check` verifica sintaxe e ausência de código inline. `npm test` testa regras de domínio. `npm run build` prepara dist para hospedagem na Vercel.
 
@@ -35,6 +35,6 @@ Cada missão vale 100 pontos, totalizando até 1.000 pontos nas dez missões. Cr
 3. Supabase Auth, alunos/professores/turmas, tentativas e histórico com RLS. O servidor deve validar notas; o aluno não pode editar notas oficiais nem se promover a professor.
 4. Publicação na Vercel e configuração do projeto Supabase. Nunca colocar chaves secretas ou service_role no cliente.
 
-Login e persistência remota ainda não foram implementados. Não há autenticação fictícia. A simulação aproxima funcionalidades didaticamente, sem reproduzir integralmente firmware, física ou algoritmos do drone real. Atualmente a origem GPS ativa terreno de satélite e desativa obstáculos artificiais; missões avaliadas precisarão de cenário controlado independente da geolocalização.
+Login, cadastro por e-mail, entrada Google e painel de turmas estão implementados no cliente Supabase. A ativação depende da migração e das configurações descritas em supabase/SETUP.md. A chave pública não permite instalar o banco automaticamente. O login Google é liberado quando o provedor está habilitado. Notas e missões avaliadas ainda não foram implementadas. A simulação aproxima funcionalidades didaticamente, sem reproduzir integralmente firmware, física ou algoritmos do drone real. Atualmente a origem GPS ativa terreno de satélite e desativa obstáculos artificiais; missões avaliadas precisarão de cenário controlado independente da geolocalização.
 
 O original está preservado em backup/index.original.html (não incluído no build).
