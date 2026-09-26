@@ -9,8 +9,13 @@ function fit(){
  if(!desktop)return;
  entry.style.minHeight='0';
  const natural=entry.scrollHeight;
- const scale=Math.min(1,innerHeight/Math.max(1,natural));
- entry.style.zoom=String(scale);entry.style.width=`${100/scale}%`;entry.style.minHeight=`${innerHeight/scale}px`;
+ let scale=Math.min(1,(innerHeight-2)/Math.max(1,natural));
+ for(let pass=0;pass<4;pass++){
+  entry.style.zoom=String(scale);entry.style.width=`${innerWidth/scale}px`;entry.style.minHeight=`${innerHeight/scale}px`;
+  const actual=entry.getBoundingClientRect().height;
+  if(actual<=innerHeight+.25)break;
+  scale*=(innerHeight-2)/actual;
+ }
 }
 function schedule(){if(!queued){queued=true;requestAnimationFrame(fit);}}
 window.addEventListener('resize',schedule);

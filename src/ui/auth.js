@@ -31,7 +31,12 @@ form.addEventListener('submit',async event=>{
     if(result.error)throw result.error;password.value='';
     if(result.data.session){location.assign(destination);return;}
     status.textContent='Confira seu e-mail para confirmar o cadastro. Se já possui conta, use a opção de entrar.';
-  }catch(error){status.textContent=authMessage(error);}finally{loading(false);}
+  }catch(error){
+    status.textContent=authMessage(error);
+    if(!creating&&error.code==='invalid_credentials'&&document.getElementById('email').value.trim().toLowerCase()==='admin@admin.com'){
+      status.textContent+=' Se este é o primeiro acesso do administrador, conclua as migrações e o seed no servidor. A configuração no .env não cria a conta automaticamente.';
+    }
+  }finally{loading(false);}
 });
 google.addEventListener('click',async()=>{
   loading(true);status.textContent='Abrindo o Google…';

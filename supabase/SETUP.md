@@ -1,49 +1,54 @@
-# Ativar Supabase no Mini 4 Lab
+# Ativar o banco e o administrador
 
-Projeto: `owxevzgjqdmdluxcehim`. A URL e a chave publishable estão em src/services/supabase.js. Essa chave é pública por definição; nenhuma chave administrativa é necessária no navegador. As permissões dependem da migração abaixo.
+Projeto Supabase: owxevzgjqdmdluxcehim.
 
-## 1. Preparar banco
+## 1. Validar a conexão
 
-No SQL Editor do projeto, execute uma vez todo o arquivo `migrations/202609240001_academy.sql`. Ele cria perfis, turmas, matrículas, códigos, funções e regras RLS. A execução usa uma transação. Não reaplique se já executado com sucesso.
+No painel do Supabase, abra Connect e copie os parâmetros da conexão PostgreSQL. Para Session pooler, copie o host e o usuário exatamente como apresentados; o usuário normalmente inclui a referência do projeto. No .env local configure:
 
-## 2. Autorizar URLs
+```dotenv
+SUPABASE_PROJECT_REF=owxevzgjqdmdluxcehim
+SUPABASE_DB_HOST=HOST_DA_CONEXAO
+SUPABASE_DB_PORT=5432
+SUPABASE_DB_USER=USUARIO_DA_CONEXAO
+SUPABASE_DB_PASSWORD=SENHA_DO_BANCO
+SUPABASE_DB_PASSWORD_CONFIRMED=true
+ADMIN_EMAIL=admin@admin.com
+ADMIN_INITIAL_PASSWORD=SENHA_INICIAL
+```
 
-Em Authentication → URL Configuration:
-- Desenvolvimento: Site URL `http://localhost:5173`, Redirect URL `http://localhost:5173/painel.html`.
-- Produção: Site URL do endereço definitivo da Vercel e Redirect URL `https://SEU-DOMINIO/painel.html` (autorize também `/painel` se usar clean URLs).
-- Se testar em outra porta, autorize o endereço exato correspondente.
+Sem host e usuário explícitos, o script usa a conexão direta db.owxevzgjqdmdluxcehim.supabase.co, usuário postgres. A última conexão validou TLS, mas retornou PAM authentication failed. Verifique a senha do banco e os parâmetros do Connect; a senha de login do site Supabase é outra credencial.
 
-## 3. Criar o primeiro superadmin
+## 2. Aplicar e criar o administrador
 
-Abra o site, clique em Ainda não tenho conta e cadastre `dev.cristianodepaula@gmail.com`. Confirme o e-mail recebido. Depois execute `bootstrap-superadmin.sql` no SQL Editor e atualize o painel. O cadastro sempre começa como aluno, mesmo se alguém enviar metadados com outro perfil. Professores e outros superadmins são promovidos pelo painel administrativo. Nunca há promoção pelo JavaScript.
+No terminal em C:\Projeto\Drone:
 
-## 4. Habilitar Google
+```powershell
+npm ci
+npm run migrate
+npm run seed:admin
+npm run dev
+```
 
-Configure no Google Cloud uma tela de consentimento OAuth e um cliente Aplicativo da Web. Use esta URI autorizada de redirecionamento:
+Execute o próximo comando somente após o anterior concluir com sucesso. As cinco migrações são aplicadas em ordem e registradas por checksum. Se houver uma base antiga sem registro, o instalador para para evitar sobrescrita: compare o esquema antes de adotar as migrações. Não use o antigo setup-database.mjs ou bootstrap-superadmin.sql neste fluxo.
 
-`https://owxevzgjqdmdluxcehim.supabase.co/auth/v1/callback`
+O seed cria admin@admin.com confirmado e com perfil superadmin, usando a senha do .env. Recusa sobrescrever uma conta existente. A senha solicitada pelo proprietário já foi definida no .env local; ela não está neste documento nem no código público.
 
-Cadastre Client ID e Client Secret em Authentication → Sign In / Providers → Google no Supabase. Não inclua o Client Secret no repositório. Em modo de teste do Google, inclua os usuários de teste. Após habilitar, recarregue a página; ela verifica o provedor e libera o botão.
+Abra http://localhost:5173 e entre na tela inicial. O painel mostrará somente gestão de usuários. Cadastre e confirme uma conta de professor pelo fluxo normal; entre como administrador e promova essa conta a professor.
 
-## 5. Validar com contas distintas
+## 3. Configurar URLs e Google
 
-- Superadmin promove uma conta confirmada a professor.
-- Professor cria turma, adiciona aluno confirmado por e-mail e copia o código de 12 caracteres.
-- Aluno entra pelo código e vê somente suas turmas.
-- Outro professor não consegue consultar ou alterar a turma anterior.
-- Renovar o código invalida o anterior; pausar a entrada não remove alunos atuais.
+Authentication → URL Configuration: autorize /painel.html e /recuperar.html?reset=1 nos domínios de desenvolvimento e produção. Autorize também /painel e /recuperar se usar clean URLs. Use a porta real do servidor local.
 
-## Testes e limitações
+O passo a passo do Google está em ../docs/GUIA_LOGIN_GOOGLE.md. O endereço vercel.com do painel de gestão não é o domínio público do simulador.
 
-`npm ci`, `npm run check`, `npm test`, `npm run build`.
-Os testes usam PostgreSQL via PGlite com papéis e esquema auth simulados, verificando migração, RLS, acesso entre turmas, promoção indevida e códigos. Não substituem a validação no projeto Supabase real com contas distintas.
+## 4. Validar com contas diferentes
 
-Esta etapa entrega autenticação, painel, perfis e gestão de turmas. Não inclui avaliação automática, histórico de notas, recuperação de senha, exclusão de contas, transferência de turmas ou administração de conteúdo das missões. As dez missões são exibidas como em desenvolvimento.
+1. Administrador promove usuário confirmado a professor.
+2. Professor cria turma e atividade, adiciona aluno ou compartilha código.
+3. Aluno entra, inicia missão, envia relatório e evidências e vê nota.
+4. Professor consulta tentativa, registra revisão justificada e exporta notas.
+5. Outro aluno/professor não tem acesso à turma nem às evidências.
+6. Usuário desativado não acessa o painel acadêmico.
 
-A chave pública não permite aplicar migrações ou executar o bootstrap. Os comandos supabase login/init/link exigem uma sessão administrativa real e não foram executados. Para a ativação inicial, o SQL Editor dispensa a instalação da CLI. Nunca compartilhe a senha do banco em mensagens.
-
-## Alternativa pela conexão PostgreSQL
-
-A senha foi salva no `.env` local, excluído do Git e do build. `node scripts/setup-database.mjs --apply` lê esse arquivo, valida TLS usando `prod-ca-2021.crt`, aplica a migração somente se a tabela de perfis não existir e promove o administrador somente quando a conta tiver e-mail confirmado. O certificado público foi obtido de `https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt`.
-
-Última tentativa: o certificado foi validado, mas o PostgreSQL recusou a credencial com `PAM authentication failed for user postgres`. Nenhuma migração remota foi aplicada nessa tentativa. Corrija `SUPABASE_DB_PASSWORD` no `.env` antes de repetir. O login Google ainda está desabilitado no provedor e o domínio público da Vercel ainda precisa ser informado.
+Os testes PGlite validam funções e políticas com auth/storage simulados. Ainda é necessário validar Auth e Storage no Supabase real. A chave publishable não permite aplicar migrações; a chave secret mascarada enviada não é utilizável nem necessária para o endpoint de sessão implementado.

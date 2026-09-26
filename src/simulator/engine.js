@@ -1,3 +1,4 @@
+import {createMissionScenery} from '../training/scenery.js';
 import {clamp,rad,deg} from '../core/math.js';
 import {createFlightState} from './state.js';
 import {createSafetyRules} from './safety.js';
@@ -9,7 +10,7 @@ let notify = text => {
   $("boot").textContent = text;
 };
 
-export async function bootSimulator(){
+export async function bootSimulator(options={}){
   let THREE;
   try {
     THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js");
@@ -24,14 +25,18 @@ export async function bootSimulator(){
     "Bateria","Mapa","QuickShots","ActiveTrack","Waypoints","Calibração","Guia","Ajuda","Fontes"
   ];
   const S = createFlightState();
+  if(options.mission) Object.assign(S,options.mission.initial,{paused:true});
+  let missionReady=!options.mission;
+  let missionScenery=null;
   const mapState = {cx:0,cz:0,scale:.7,follow:true,planning:false};
-  const geo = {origin:null,busy:false,message:"Aguardando GPS",tiles:new Map()};
+  const geo = {origin:null,busy:false,message:options.mission?"Área controlada da missão":"Aguardando GPS",tiles:new Map()};
   function mapCaption(){
     $("mapCaption").textContent=geo.origin
       ? `SATÉLITE · GPS ±${Math.round(geo.origin.accuracy)} m · ${mapState.planning?"toque para criar pontos":"arraste / pinça"}`
       : geo.message;
   }
   function locate(){
+    if(options.mission){notify("Missão usa cenário controlado, sem GPS real.");return;}
     if(geo.busy)return;
     if(S.flying){notify("Pouse antes de atualizar o ponto de partida.");return}
     if(!window.isSecureContext){geo.message="GPS exige HTTPS ou localhost";mapCaption();notify(geo.message);return}
@@ -230,6 +235,7 @@ export async function bootSimulator(){
     }
   }
   vehicle.position.set(80,0,-120);scene.add(vehicle);
+  if(options.mission)missionScenery=createMissionScenery(THREE,scene,trainingScenery,obstacles,options.mission);
 
   // Local east/south metre coordinates share the minimap's Mercator origin.
   const flightTiles=new Map(),flightGroup=new THREE.Group();scene.add(flightGroup);
@@ -543,6 +549,7 @@ export async function bootSimulator(){
 
   // ---------- AUTOMAÇÃO DE VOO DIDÁTICA ----------
   function ready(){
+    if(!missionReady){notify("Conclua a preparação da missão antes de decolar.");return false;}
     if(!S.power){notify("Ligue a simulação pelo botão de energia.");return false}
     if(S.crashed){notify("Colisão simulada. Use Reiniciar.");return false}
     return true;
@@ -731,8 +738,9 @@ export async function bootSimulator(){
       updateCamera();renderer.render(scene,camera);
       const blob=await new Promise(resolve=>renderer.domElement.toBlob(resolve,"image/png"));
       if(!blob)throw Error("Não foi possível gerar a imagem.");
-      download(blob,"mini4-foto-simulada-"+Date.now()+".png");
-      notify("Foto da cena 3D baixada. Não inclui os menus do controle.");
+      if(options.onCapture)await options.onCapture(blob,"photo",snapshot());
+      else download(blob,"mini4-foto-simulada-"+Date.now()+".png");
+      notify(options.onCapture?"Foto registrada na missão.":"Foto da cena 3D baixada. Não inclui os menus do controle.");
     }catch(e){notify("Falha na captura: "+e.message)}
   }
   function stopRecord(){
@@ -756,8 +764,9 @@ export async function bootSimulator(){
         clearTimeout(session.timer);session.stream.getTracks().forEach(t=>t.stop());
         const type=rec.mimeType||"video/webm";
         if(session.chunks.length){
-          download(new Blob(session.chunks,{type}),
-            "mini4-video-simulado-"+Date.now()+(type.includes("mp4")?".mp4":".webm"));
+          const blob=new Blob(session.chunks,{type});
+          if(options.onCapture)Promise.resolve(options.onCapture(blob,"video",snapshot())).catch(e=>notify(e.message));
+          else download(blob,"mini4-video-simulado-"+Date.now()+(type.includes("mp4")?".mp4":".webm"));
         }
         if(recording===session)recording=null;
         $("recordButton").classList.remove("recording");
@@ -1118,6 +1127,7 @@ export async function bootSimulator(){
       b.classList.toggle("active",b.dataset.mode===mode));
   }
   function reset(){
+    if(options.mission){notify("Use o painel da missão para encerrar ou iniciar outra tentativa.");return;}
     stopRecord();resetInputs();trail.length=0;
     Object.assign(S,{
       x:0,z:0,h:0,yaw:0,gimbal:-45,zoom:1,speed:0,
@@ -1138,6 +1148,7 @@ export async function bootSimulator(){
     const b=e.target.closest("[data-act]");
     if(!b||b.disabled)return;
     const act=b.dataset.act;
+    if(options.mission&&["charge","guide"].includes(act)){notify("Recurso indisponível durante uma missão.");return;}
     if(act.startsWith("panel:")){openPanel(act.slice(6));return}
     switch(act){
       case "close":closePanel();break;
@@ -1197,6 +1208,7 @@ export async function bootSimulator(){
     }
     if(!el.matches("[data-setting]"))return;
     const key=el.dataset.setting;
+    if(options.mission&&["battery","gps","link","light","scenario"].includes(key)){notify("Condições controladas pela missão.");renderPanel();return;}
     if(!Object.prototype.hasOwnProperty.call(S,key))return;
     if(el.type==="number"){
       if(!el.validity.valid||el.value===""){
@@ -1205,6 +1217,7 @@ export async function bootSimulator(){
       S[key]=Number(el.value);
     }else if(el.type==="checkbox")S[key]=el.checked;
     else S[key]=el.value;
+    if(options.mission){S.maxH=Math.min(S.maxH,options.mission.maxHeight);S.maxD=Math.min(S.maxD,options.mission.maxDistance);}
     if(key==="cal")S.calStep=0;
     if(key==="mode")setMode(S.mode);
     if(key==="gps"&&S.gps==="Fraco")S.homeValid=false;
@@ -1222,6 +1235,9 @@ export async function bootSimulator(){
   let previous=performance.now(),trailClock=0,hudClock=0;
   function updateHUD(){
     $("h").textContent=S.h.toFixed(1);
+    $("position-x").textContent=S.x.toFixed(1);
+    $("position-z").textContent=S.z.toFixed(1);
+    $("heading").textContent=String(Math.round((S.yaw*180/Math.PI%360+360)%360)%360);
     $("d").textContent=distance(S.x,S.z).toFixed(1);
     $("speed").textContent=(S.paused||$("settings").open?0:S.speed).toFixed(1);
     $("batteryHud").textContent=Math.round(S.battery)+"%";
@@ -1254,6 +1270,7 @@ export async function bootSimulator(){
       }
     }
   }
+  function snapshot(){return {paused:S.paused||$("settings").open,power:S.power,x:S.x,z:S.z,h:S.h,yaw:S.yaw,gimbal:S.gimbal,zoom:S.zoom,speed:S.speed,battery:S.battery,flying:S.flying,crashed:S.crashed,power:S.power,exposure:S.exposure,ev:S.ev,grid:S.grid,mode:S.mode,gps:S.gps,link:S.link,lossAction:S.lossAction,homeValid:S.homeValid,rthH:S.rthH,maxH:S.maxH,maxD:S.maxD,avoid:S.avoid,light:S.light,calibrated:S.calStep>=calSteps[S.cal].length,auto:S.auto?.name||S.auto?.kind||'',recording:!!recording};}
   function frame(now){
     requestAnimationFrame(frame);
     const dt=Math.min(.05,(now-previous)/1000);previous=now;
@@ -1271,13 +1288,16 @@ export async function bootSimulator(){
     updateCamera();
     renderer.render(scene,camera);
     drawMap();
+    if(options.mission){mc.font="bold 12px system-ui";mc.textAlign="center";for(const [i,g] of options.mission.goals.entries()){if(g.x===undefined)continue;const q=toMap(g.x,g.z);mc.fillStyle="#ffba60";mc.beginPath();mc.arc(q.x,q.y,5,0,Math.PI*2);mc.fill();mc.fillText(String(i+1),q.x,q.y-9);}}
     hudClock+=dt;
     if(hudClock>.1){hudClock=0;updateHUD()}
+    options.onTick?.(active?dt:0,snapshot());
   }
   $("boot").hidden=true;
   notify("Pronto. Clique em Decolar e use os manetes ou o teclado.");
   swapView(false);
-  locate();
+  if(options.mission){mapCaption();$("flightCredit").hidden=true;$("mapCredit").hidden=true;}else locate();
   requestAnimationFrame(frame);
+  return {snapshot,start(){missionReady=true;S.paused=false;},pause(){S.paused=true;resetInputs();},highlight(index){missionScenery?.highlight(index);},inject(values){Object.assign(S,values);},stopRecording:stopRecord};
 }
 

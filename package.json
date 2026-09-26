@@ -8,7 +8,9 @@
     "start": "node scripts/serve.mjs",
     "test": "node --test",
     "check": "node scripts/check.mjs",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "migrate": "node scripts/migrate.mjs",
+    "seed:admin": "node scripts/seed-admin.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -16,5 +18,8 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.14",
     "pg": "^8.16.3"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.8.0"
   }
 }

@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Mini 4 Lab — Simulador RC 2</title>
+<title>Missão — Mini 4 Lab</title>
 <link rel="stylesheet" href="/src/styles/simulator.css">
+<link rel="stylesheet" href="/src/styles/training.css">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 </head>
-<body>
+<body class="training-page">
 <div class="wrap">
   <div class="top">
     <div>
@@ -119,7 +120,7 @@
           <div class="telemetry">
             <div class="telemetry-primary"><span>H <b id="h">0.0</b> m</span><span>D <b id="d">0.0</b> m</span><span><b id="speed">0.0</b> m/s</span></div>
             <div class="telemetry-secondary"><span>X <b id="position-x">0.0</b> m</span><span>Z <b id="position-z">0.0</b> m</span><span>Rumo <b id="heading">0</b>°</span></div>
-            
+            <div id="mission-step-status" class="telemetry-secondary">Missão aguardando início</div>
           </div>
           <div id="cameraInfo">SIM · 1×<br>Gimbal −15°</div>
         </div>
@@ -166,6 +167,7 @@
 
 
 
-<script type="module" src="/src/main.js"></script>
+<aside id="training-panel" aria-label="Missão"><a href="/painel.html">← Painel</a><div id="training-content"><p>Preparando missão…</p></div></aside>
+<script type="module" src="/src/training/session.js"></script>
 </body>
 </html>

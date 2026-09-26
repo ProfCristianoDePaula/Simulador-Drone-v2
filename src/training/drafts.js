@@ -1,0 +1,5 @@
+let connection;
+function database(){return connection??=new Promise((resolve,reject)=>{const request=indexedDB.open('mini4-academy',1);request.onupgradeneeded=()=>request.result.createObjectStore('drafts');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
+export async function saveDraft(key,value){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').put(value,key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+export async function getDraft(key){const db=await database();return new Promise((resolve,reject)=>{const r=db.transaction('drafts').objectStore('drafts').get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function deleteDraft(key){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readwrite');tx.objectStore('drafts').delete(key);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}

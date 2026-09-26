@@ -6,7 +6,8 @@
   function fitDesktop(){
     root.classList.toggle('desktop-fit',desktop.matches);
     if(!desktop.matches){wrap.style.transform='';wrap.style.left='';wrap.style.top='';return}
-    const width=document.documentElement.clientWidth,height=window.innerHeight;
+    const training=!!document.getElementById('training-panel');
+    const width=document.documentElement.clientWidth-(training&&innerWidth>=1000?360:0),height=window.innerHeight-(training&&innerWidth<1000?280:0);
     const scale=Math.min(width/1220,height/1040);
     wrap.style.transform=`scale(${scale})`;
     wrap.style.left=`${Math.max(0,(width-1220*scale)/2)}px`;

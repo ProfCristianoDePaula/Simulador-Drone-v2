@@ -340,3 +340,7 @@ html.desktop-fit,html.desktop-fit body{width:100%;height:100%;overflow:hidden}
 .desktop-fit .helpbar button{font-size:13px}
 
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+.telemetry{flex-wrap:wrap;max-width:78%;font-variant-numeric:tabular-nums}
+
+.telemetry{display:flex;flex-direction:column;gap:3px;max-width:78%}.telemetry-primary{display:flex;gap:14px;flex-wrap:wrap}.telemetry-secondary{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#d0e0e5}.telemetry .telemetry-secondary b{font-size:12px;font-weight:500}

@@ -95,6 +95,7 @@ export function createFlightDynamics({S,geo,obstacles,axes,keys,distance,effecti
         y:ly*(S.mode==="Cine"?1.5:3)
       };
     }
+    if(S.windX||S.windZ){v.x+=(S.windX||0);v.z+=(S.windZ||0);}
     move(v,dt);
     S.battery=Math.max(0,S.battery-dt*(.016+S.speed*.001));
   }
