@@ -1,3 +1,4 @@
+import {goalCriteria} from './criteria.js';
 import {navigationGuidance} from './navigation.js';
 import '../ui/viewport.js';
 import {bootSimulator} from '../simulator/engine.js';
@@ -19,7 +20,7 @@ function persist(){if(!draftKey)return Promise.resolve();return saveDraft(draftK
 function feed(event){payload.events.push(event);evaluator.feed(event);}
 function flightView(){
  heading();root.append(el('p','Conclua os objetivos na ordem. Os marcadores numerados aparecem no cenário. Menu •••: ajustes; WP: rota; QS: tomadas automáticas.'));
- const list=el('ol','');list.id='goals';mission.goals.forEach(g=>list.append(el('li',g.label+(g.x!==undefined?` · X ${g.x} / Z ${g.z} / H ${g.h} m`:''))));root.append(list);
+ const list=el('ol','');list.id='goals';mission.goals.forEach(g=>{const item=el('li',''),details=el('details','');details.append(el('summary',g.label),el('p',goalCriteria(g)));item.append(details);list.append(item);});root.append(list);
  const progress=el('progress','');progress.id='mission-progress';progress.max=mission.goals.length;root.append(progress);
  const guidance=el('p','');guidance.id='navigation-guidance';root.append(el('h2','Guia do objetivo atual'),guidance);
  const help=el('details',''),summary=el('summary','Como ler posição e comandos');help.append(summary,el('p','Coordenadas locais do simulador, em metros: a base é X 0 / Z 0. X positivo = leste; X negativo = oeste. Z negativo = norte; Z positivo = sul. H = altura. Rumo 0° = norte, 90° = leste. As setas movem o drone em relação à direção para onde ele aponta; A/D giram. W/S sobem/descem. Os números no mapa indicam os objetivos. Siga os marcadores e mantenha distância dos obstáculos; o guia indica direção, não uma rota livre de obstáculos.'));root.append(help);
@@ -56,7 +57,7 @@ async function capture(blob,kind,s){
  status(`${kind==='photo'?'Foto registrada':'Vídeo registrado'} localmente. ${assignmentId?'Será enviado ao entregar.':'Treino sem envio ao banco.'}`);
 }
 function prep(){
- heading();root.append(el('p',mission.brief),el('h2','Checklist pré-voo'));
+ heading();root.append(el('p',mission.brief));const briefing=el('details','');briefing.append(el('summary','Plano de voo e critérios de todas as etapas'));const steps=el('ol','');mission.goals.forEach(g=>steps.append(el('li',g.label+' — '+goalCriteria(g))));briefing.append(steps);root.append(briefing,el('h2','Checklist pré-voo')); 
  payload.pre=Array(6).fill(false);root.append(checks(preChecklist,payload.pre));
  const label=el('label',mission.quiz.question),select=el('select','');const placeholder=el('option','Selecione…');placeholder.value='';select.append(placeholder);
  mission.quiz.choices.forEach((text,i)=>{const option=el('option',text);option.value=String(i);select.append(option);});select.addEventListener('change',()=>payload.quiz=Number(select.value));label.append(select);root.append(label);
@@ -74,13 +75,13 @@ async function finishFlight(){
 }
 function showPost(message=''){
  heading();root.append(el('h2','Checklist pós-voo'));if(!payload.post.length)payload.post=Array(6).fill(false);root.append(checks(postChecklist,payload.post));
- const label=el('label','Relatório: descreva o voo, as ocorrências e o que pode melhorar (60–4.000 caracteres).'),report=el('textarea','');report.maxLength=4000;report.value=payload.report;report.addEventListener('input',()=>payload.report=report.value);label.append(report);root.append(label);
+ const label=el('label','Relatório: descreva o voo, as ocorrências e o que pode melhorar (5–4.000 caracteres).'),report=el('textarea','');report.maxLength=4000;report.value=payload.report;report.addEventListener('input',()=>payload.report=report.value);label.append(report);root.append(label);
  root.append(button(assignmentId?'Enviar evidências e finalizar':'Concluir treino',submit));
  root.append(button('Voltar ao voo',()=>{if(phase==='recovered')throw new Error('Tentativa interrompida não pode retomar a física. Entregue o registro ou abandone pelo painel.');phase='flight';flightView();bridge.start();}));
  if(message)status(message);
 }
 async function submit(){
- if(!payload.post.every(Boolean)||payload.report.trim().length<60)throw new Error('Conclua o pós-voo e escreva pelo menos 60 caracteres.');
+ if(!payload.post.every(Boolean)||payload.report.trim().length<5)throw new Error('Conclua o pós-voo e escreva pelo menos 5 caracteres.');
  if(!assignmentId){phase='done';heading();const p=evaluator.progress;root.append(el('h2','Treino concluído'),el('p',`${p.index}/${mission.goals.length} objetivos${p.critical?' · Falha crítica: refaça o exercício.':''}. Treino sem nota oficial.`),button('Treinar novamente',()=>location.reload()));return;}
  status('Enviando evidências. Não feche esta página…');await persist();
  for(const item of media){

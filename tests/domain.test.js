@@ -15,7 +15,7 @@ test('regras acompanham alterações de cenário, modo e iluminação',()=>{
   assert.equal(rules.sensorsAvailable(),true);s.mode='Sport';assert.equal(rules.sensorsAvailable(),false);
   s.mode='Normal';s.light='Pouca luz';assert.equal(rules.sensorsAvailable(),false);
 });
-test('dez missões independentes valem cem pontos cada',()=>{
-  assert.equal(missions.length,10);assert.equal(new Set(missions.map(m=>m.id)).size,10);
+test('doze missões independentes valem cem pontos cada',()=>{
+  assert.equal(missions.length,12);assert.equal(new Set(missions.map(m=>m.id)).size,12);
   assert.ok(missions.every(m=>m.maxScore===100));assert.equal(Object.values(rubric).reduce((a,b)=>a+b),100);
 });

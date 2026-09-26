@@ -1,3 +1,4 @@
+import {goalCriteria} from '../training/criteria.js';
 import {getClient,authMessage} from '../services/supabase.js';
 import {courseMissions} from '../training/catalog.js';
 import {element as el,link,field,choice,csvCell} from './dom.js';
@@ -20,10 +21,11 @@ async function loadAcademic(){
  ]);
 }
 async function render(){
- main.replaceChildren();document.getElementById('role-label').textContent=roleNames[profile.role];document.getElementById('welcome').textContent=`Olá, ${profile.full_name||profile.email}`;
+ main.replaceChildren();document.body.dataset.role=profile.role;document.getElementById('role-label').textContent=roleNames[profile.role];document.getElementById('welcome').textContent=`Olá, ${profile.full_name||profile.email}`;
+ document.getElementById('panel-description').textContent=profile.role==='superadmin'?'Administre acessos e perfis. Professores cuidam das turmas; alunos acompanham suas atividades.':profile.role==='teacher'?'Organize suas turmas, prepare atividades e acompanhe a evolução de cada piloto.':'Seu próximo voo começa aqui. Acompanhe as atividades e pratique para evoluir com segurança.';
  if(!profile.active){main.append(el('p','Seu acesso acadêmico foi desativado. Procure o administrador.'));return;}
  if(profile.role==='superadmin'){await renderAdmin();return;}
- await loadAcademic();
+ await loadAcademic();const navigation=el('nav','','workspace-nav');for(const [id,label] of [['classes','Turmas'],['activities','Atividades'],['history','Histórico'],['missions','Missões']]){const a=el('a',label);a.href='#'+id;navigation.append(a);}main.append(navigation);
  const summary=el('div','','summary');summary.append(card(`${classes.filter(c=>!c.archived).length} turmas ativas`),card(`${assignments.length} atividades`),card(`${attempts.filter(t=>t.status==='submitted').length} entregas`));main.append(summary);
  const tools=el('section','','grid');
  if(profile.role==='teacher'){
@@ -32,12 +34,12 @@ async function render(){
   const join=card('Entrar em turma'),form=el('form'),code=field('Código do professor');code.input.required=true;code.input.pattern='[A-Fa-f0-9]{12}';code.input.maxLength=12;form.append(code.box);formSubmit(form,'Entrar',async()=>{const result=await rpc('academy_join_class',{invite_code:code.input.value.trim()});if(!result.ok)throw Error(result.message);await render();});join.append(form);tools.append(join);
  }
  const free=card('Prática sem nota');free.append(el('p','Explore livremente ou treine uma missão antes da avaliação.'),link('Simulador livre','/simulador.html'));tools.append(free);main.append(tools);
- const list=el('section');list.append(el('h2','Minhas turmas'));const grid=el('div','','grid');
+ const list=el('section');list.id='classes';list.append(el('h2','Minhas turmas'));const grid=el('div','','grid');
  for(const c of classes){const node=card(c.name);node.append(el('span',c.archived?'Arquivada':'Ativa','badge'));if(profile.role==='teacher')node.append(button('Gerenciar turma',()=>manageClass(c)));grid.append(node);}if(!classes.length)grid.append(el('p','Você ainda não participa de turmas.'));list.append(grid);main.append(list);
  renderAssignments();renderAttempts();renderMissions();
 }
 function renderAssignments(){
- const section=el('section');section.append(el('h2',profile.role==='student'?'Minhas atividades':'Atividades atribuídas'));const grid=el('div','','grid');
+ const section=el('section');section.id='activities';section.append(el('h2',profile.role==='student'?'Minhas atividades':'Atividades atribuídas'));const grid=el('div','','grid');
  for(const a of assignments){const node=card(a.title),c=classes.find(c=>c.id===a.class_id);node.append(el('p',`${c?.name||'Turma'} · ${a.due_at?new Date(a.due_at).toLocaleString('pt-BR'):'Sem prazo'} · ${a.max_attempts} tentativas · ${a.grade_rule==='best'?'Melhor nota':'Última nota'}`));
   if(profile.role==='student'){const current=gradeOf(a.id,profile.id);node.append(el('p',current?`Nota: ${current.review_score??current.score}/100 · ${current.passed?'Aprovado':'Refazer'}`:'Sem entrega'));const open=attempts.find(t=>t.assignment_id===a.id&&t.student_id===profile.id&&t.status==='flying');if(open)node.append(link('Recuperar entrega local',missionLink(a.mission_id,a.id)+`&tentativa=${open.id}`),button('Encerrar tentativa interrompida',async()=>{await rpc('academy_abandon_attempt',{tid:open.id});await render();}));else if(!c?.archived&&(!a.due_at||new Date(a.due_at)>new Date()))node.append(link('Realizar missão',missionLink(a.mission_id,a.id)));}
   else node.append(button('Relatório da atividade',()=>showGradebook(a)));
@@ -45,10 +47,10 @@ function renderAssignments(){
  }if(!assignments.length)grid.append(el('p','Nenhuma atividade atribuída.'));section.append(grid);main.append(section);
 }
 function renderAttempts(){
- const section=el('section');section.append(el('h2',profile.role==='student'?'Histórico de tentativas':'Entregas para acompanhamento'));const list=el('div','','grid');
+ const section=el('section');section.id='history';section.append(el('h2',profile.role==='student'?'Histórico de tentativas':'Entregas para acompanhamento'));const list=el('div','','grid');
  for(const t of attempts.slice(0,100)){const a=assignments.find(a=>a.id===t.assignment_id),n=card(a?.title||'Atividade');n.append(el('p',`${new Date(t.started_at).toLocaleString('pt-BR')} · ${t.status==='submitted'?`${t.review_score??t.score}/100`:t.status==='flying'?'Em andamento':'Abandonada'}`));if(t.feedback)n.append(el('p',t.feedback));n.append(button('Ver tentativa',()=>showAttempt(t)));list.append(n);}if(!attempts.length)list.append(el('p','Nenhuma tentativa registrada.'));section.append(list);main.append(section);
 }
-function renderMissions(){const section=el('section');section.append(el('h2','Treine as dez missões'));const grid=el('div','','grid mission-grid');for(const m of courseMissions){const n=card(m.title);n.append(el('span',`MISSÃO ${m.order} · ATÉ 100 PONTOS`,'badge'),el('p',`${m.goals.length} objetivos · ${m.brief}`),link('Treinar sem nota',missionLink(m.id)));grid.append(n);}section.append(grid);main.append(section);}
+function renderMissions(){const section=el('section');section.id='missions';section.append(el('h2',`Explore as ${courseMissions.length} missões`));const grid=el('div','','grid mission-grid');for(const m of courseMissions){const n=card(m.title);n.append(el('span',`MISSÃO ${m.order} · ATÉ 100 PONTOS`,'badge'),el('p',`${m.goals.length} objetivos · ${m.brief}`),link('Treinar sem nota',missionLink(m.id)));const details=el('details'),summary=el('summary','Plano de voo e tolerâncias'),steps=el('ol');for(const goal of m.goals)steps.append(el('li',goal.label+' — '+goalCriteria(goal)));details.append(summary,steps);n.insertBefore(details,n.lastChild);grid.append(n);}section.append(grid);main.append(section);}
 async function manageClass(c){
  const {dialog,body}=modal(c.name);
  const invite=await query(client.from('academy_invites').select('code,enabled').eq('class_id',c.id).single());
@@ -77,7 +79,7 @@ async function showAttempt(attempt){
 async function renderAdmin(){
  document.getElementById('free-nav').hidden=true;
  const section=card('Gerenciar usuários');section.append(el('p','Promova alunos a professores, altere perfis ou desative o acesso acadêmico. A administração não participa das turmas.'));
- const form=el('form'),search=field('Buscar por e-mail (opcional)','search');form.append(search.box);const results=el('div');
+ const form=el('form'),search=field('Buscar por e-mail (opcional)','search');form.append(search.box);const results=el('div','','users-grid');
  async function load(){let request=client.from('academy_profiles').select('id,full_name,email,role,active').order('created_at',{ascending:false}).range(usersPage*30,usersPage*30+29);if(search.input.value.trim())request=request.ilike('email',`%${search.input.value.trim().replace(/[%_]/g,'')}%`);const users=await query(request);results.replaceChildren();for(const u of users){const row=card(u.full_name||u.email);row.append(el('p',u.email));const role=choice('Perfil',[['student','Aluno'],['teacher','Professor'],['superadmin','Administrador']],u.role),active=choice('Acesso',[['true','Ativo'],['false','Desativado']],String(u.active));row.append(role.box,active.box,button('Salvar usuário',async()=>{await rpc('academy_manage_user',{uid:u.id,new_role:role.input.value,is_active:active.input.value==='true'});notice.textContent='Usuário atualizado.';if(u.id===profile.id){location.reload();return;}await load();}));results.append(row);}if(!users.length)results.append(el('p','Nenhum usuário encontrado.'));}
  formSubmit(form,'Buscar',async()=>{usersPage=0;await load();});section.append(form,results,button('Página anterior',async()=>{usersPage=Math.max(0,usersPage-1);await load();}),button('Próxima página',async()=>{usersPage++;await load();}));main.append(section);await load();
  const logs=await query(client.from('academy_audit_log').select('action,created_at').eq('action','manage_user').order('created_at',{ascending:false}).limit(20));const audit=card('Últimas alterações de usuários');for(const log of logs)audit.append(el('p',`${new Date(log.created_at).toLocaleString('pt-BR')} · Permissões atualizadas`));main.append(audit);

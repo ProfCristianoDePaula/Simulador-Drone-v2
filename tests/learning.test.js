@@ -15,7 +15,7 @@ test('avaliação exige enquadramento, sequência e permanência',()=>{
  assert.equal(targetVisible({x:0,z:-20,h:12,radius:65},base),true);assert.equal(targetVisible({x:0,z:20,h:12,radius:65},base),false);
  assert.match(csvCell('=HYPERLINK("x")'),/^"'/);
 });
-test('todas as missões têm objetivos executáveis e rubrica de cem pontos',()=>{assert.equal(courseMissions.length,10);for(const m of courseMissions){assert.ok(m.goals.length>=4);assert.equal(m.goals.at(-1).kind,'land');assert.equal(m.maxScore,100);}});
+test('todas as missões têm objetivos executáveis e rubrica de cem pontos',()=>{assert.equal(courseMissions.length,12);for(const m of courseMissions){assert.ok(m.goals.length>=4);assert.equal(m.goals.at(-1).kind,'land');assert.equal(m.maxScore,100);}});
 test('banco avalia a tentativa, controla autoria e isola administração',async()=>{
  const db=new PGlite();
  try{
@@ -55,7 +55,7 @@ test('banco avalia a tentativa, controla autoria e isola administração',async(
   await assert.rejects(db.query('select public.academy_start_attempt($1)',[aid]),/anterior/);
   await as(ids[3]);assert.equal((await db.query('select * from public.academy_attempts')).rows.length,0);await assert.rejects(db.query('select public.academy_start_attempt($1)',[aid]),/indisponível/);
   await db.exec('reset role');await db.query("update public.academy_attempts set started_at=now()-interval '10 minutes' where id=$1",[attempt.id]);
-  await as(ids[2]);const payload={initial:base,events:eventsFor(courseMissions[0]),pre:Array(6).fill(true),post:Array(6).fill(true),quiz:1,report:'Realizei o voo mantendo controle de altura e orientação. Registrei o pouso na base e revisei todos os procedimentos.'};
+  await as(ids[2]);const payload={initial:base,events:eventsFor(courseMissions[0]),pre:Array(6).fill(true),post:Array(6).fill(true),quiz:1,report:'Teste'};
   await assert.rejects(db.query('select public.academy_submit_attempt($1,$2)',[attempt.id,{events:null}]),/Telemetria/);
   const incomplete=structuredClone(payload);delete incomplete.events[0].s.flying;
   await assert.rejects(db.query('select public.academy_submit_attempt($1,$2)',[attempt.id,incomplete]),/incompleto/);

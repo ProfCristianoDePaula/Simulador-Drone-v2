@@ -1,8 +1,9 @@
+import {goalCriteria,goalReadings} from './criteria.js';
 export function navigationGuidance(goal,s,progress){
  if(s.paused)return 'Avaliação pausada. Retome o voo e feche as configurações para contar o tempo no objetivo.';
  if(!s.power)return 'Ligue o controle para retomar a avaliação.';
  if(!goal)return 'Todos os objetivos concluídos. Encerre o voo e preencha o pós-voo.';
- if(!['point','land'].includes(goal.kind))return `Objetivo atual: ${goal.label}. Progresso: ${progress.hold.toFixed(1)} / ${goal.seconds} s.`;
+ if(!['point','land'].includes(goal.kind))return `Etapa ${progress.index+1}: ${goal.label}.\n${goalCriteria(goal)}\n${goalReadings(goal,s)}\nPermanência válida: ${progress.hold.toFixed(1)} / ${goal.seconds} s.`;
  const x=goal.kind==='land'?0:goal.x,z=goal.kind==='land'?0:goal.z,h=goal.kind==='land'?0:goal.h;
  const dx=x-s.x,dz=z-s.z,dh=h-s.h,distance=Math.hypot(dx,dz);
  const right=Math.cos(s.yaw)*dx+Math.sin(s.yaw)*dz,forward=Math.sin(s.yaw)*dx-Math.cos(s.yaw)*dz;
