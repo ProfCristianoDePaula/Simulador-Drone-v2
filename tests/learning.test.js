@@ -48,10 +48,13 @@ test('banco avalia a tentativa, controla autoria e isola administração',async(
   await db.query("update public.academy_profiles set role='superadmin' where id=$1",[ids[0]]);
   const as=async id=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated');};
   await as(ids[0]);await db.query("select public.academy_manage_user($1,'teacher',true)",[ids[1]]);
+  await db.query("select public.academy_edit_user($1,'Nome atualizado','teacher',true)",[ids[1]]);
+  assert.equal((await db.query('select full_name from public.academy_profiles where id=$1',[ids[1]])).rows[0].full_name,'Nome atualizado');
+  await assert.rejects(db.query("select public.academy_edit_user($1,'   ','teacher',true)",[ids[1]]),/nome/);
   await assert.rejects(db.query("select public.academy_create_class('Turma admin')"),/professores/);
   await as(ids[1]);const cid=(await db.query("select public.academy_create_class('Turma') as id")).rows[0].id;await db.query('select public.academy_add_student($1,$2)',[cid,'test2@example.test']);
   const aid=(await db.query("select public.academy_assign($1,'primeiro-voo','Atividade',null,1,70,'best') as id",[cid])).rows[0].id;
-  await as(ids[2]);const attempt=(await db.query('select row_to_json(public.academy_start_attempt($1)) as attempt',[aid])).rows[0].attempt;
+  await as(ids[2]);await assert.rejects(db.query("select public.academy_edit_user($1,'Indevido','superadmin',true)",[ids[2]]),/restrito/);const attempt=(await db.query('select row_to_json(public.academy_start_attempt($1)) as attempt',[aid])).rows[0].attempt;
   await assert.rejects(db.query('select public.academy_start_attempt($1)',[aid]),/anterior/);
   await as(ids[3]);assert.equal((await db.query('select * from public.academy_attempts')).rows.length,0);await assert.rejects(db.query('select public.academy_start_attempt($1)',[aid]),/indisponível/);
   await db.exec('reset role');await db.query("update public.academy_attempts set started_at=now()-interval '10 minutes' where id=$1",[attempt.id]);
