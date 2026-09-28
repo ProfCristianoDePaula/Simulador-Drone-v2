@@ -15,7 +15,7 @@ O administrador inicial é admin@admin.com, com a senha definida em ADMIN_INITIA
 
 ## Funcionalidades implementadas
 
-- Dez missões com cenários, objetivos sequenciais, telemetria, fotos/vídeos e checklists. Cada missão vale 100 pontos: pré-voo 20, pilotagem 30, objetivos 35 e pós-voo 15.
+- Doze missões com cenários, objetivos sequenciais, telemetria, fotos/vídeos e checklists. Cada missão vale 100 pontos: pré-voo 20, pilotagem 30, objetivos 35 e pós-voo 15.
 - Alunos: inscrição por código, atividades, tentativas, notas, histórico e recuperação de entregas locais.
 - Professores: suas turmas, matrículas, atividades, prazos, tentativas, revisão justificada e exportação CSV.
 - Administrador: usuários, perfis e bloqueio de acesso. O painel administrativo não gerencia turmas.
@@ -33,7 +33,7 @@ Configure SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY e SUPABASE_JWKS_URL na Vercel. 
 
 npm test valida regras de avaliação, API e permissões com PostgreSQL local via PGlite. npm run check verifica sintaxe e separação dos HTML. npm run build gera a distribuição.
 
-A integração no Supabase real ainda precisa ser validada: a última tentativa de conexão recusou a senha PostgreSQL. Nenhuma migração nem criação do administrador remoto foi confirmada. A publicação desta versão na Vercel também não foi confirmada.
+Publicado em https://simulador-drone-v2.vercel.app em 28/09/2026. Migrações aplicadas no Supabase, 12 missões publicadas e login administrativo validado no endpoint de produção. Relatório pós-voo: 5 a 4.000 caracteres. Google depende da habilitação do provedor.
 
 ## Organização e limites
 
