@@ -46,8 +46,10 @@ google.addEventListener('click',async()=>{
 async function init(){
   if(!SUPABASE_PUBLIC_KEY){status.textContent='Acesso em configuração. O simulador livre continua disponível.';google.disabled=true;submit.disabled=true;signup.disabled=true;document.getElementById('google-status').textContent='Login Google aguardando configuração.';return;}
   submit.disabled=false;status.textContent='Entre com seu e-mail ou crie sua conta de aluno.';
-  try{const response=await fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_PUBLIC_KEY}});if(response.ok){googleAvailable=!!(await response.json()).external?.google;google.disabled=!googleAvailable;document.getElementById('google-status').textContent=googleAvailable?'':'Login Google aguardando habilitação.';}}
-  catch{document.getElementById('google-status').textContent='Não foi possível verificar o login Google.';}
+  if(!google.hidden){
+    try{const response=await fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_PUBLIC_KEY}});if(response.ok){googleAvailable=!!(await response.json()).external?.google;google.disabled=!googleAvailable;document.getElementById('google-status').textContent=googleAvailable?'':'Login Google aguardando habilitação.';}}
+    catch{document.getElementById('google-status').textContent='Não foi possível verificar o login Google.';}
+  }
   try{const client=await getClient();const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session)location.replace(destination);}catch(error){status.textContent=authMessage(error);}
 }
 init();
