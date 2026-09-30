@@ -1,12 +1,16 @@
 import http from 'node:http';
-import session from '../api/session.js';
+import {loadEnvFile} from 'node:process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 const root = path.resolve('');
+try{loadEnvFile(process.env.DRONE_ENV_FILE||'.env');}catch(error){if(error.code!=='ENOENT')throw error;}
+const {default:session}=await import('../api/session.js');
+const {default:userEmail}=await import('../api/user-email.js');
 const types = {'.ico':'image/x-icon','.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8'};
 http.createServer(async(req,res)=>{
   try {
     if(new URL(req.url,'http://localhost').pathname==='/api/session'){await session(req,res);return;}
+    if(new URL(req.url,'http://localhost').pathname==='/api/user-email'){await userEmail(req,res);return;}
     let pathname = decodeURIComponent(new URL(req.url,'http://localhost').pathname);
     if(pathname === '/missao') pathname = '/missao.html';
     if(pathname === '/recuperar') pathname = '/recuperar.html';

@@ -13,7 +13,7 @@
     "seed:admin": "node scripts/seed-admin.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.12"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.14",

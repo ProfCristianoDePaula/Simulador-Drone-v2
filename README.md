@@ -2,7 +2,7 @@
 
 ## Executar e acessar
 
-Requer Node.js 20 ou superior. No diretório C:\Projeto\Drone:
+Requer Node.js 20.12 ou superior. No diretório do projeto:
 
 ```powershell
 npm ci
@@ -18,7 +18,7 @@ O administrador inicial é admin@admin.com, com a senha definida em ADMIN_INITIA
 - Doze missões com cenários, objetivos sequenciais, telemetria, fotos/vídeos e checklists. Cada missão vale 100 pontos: pré-voo 20, pilotagem 30, objetivos 35 e pós-voo 15.
 - Alunos: inscrição por código, atividades, tentativas, notas, histórico e recuperação de entregas locais.
 - Professores: suas turmas, matrículas, atividades, prazos, tentativas, revisão justificada e exportação CSV.
-- Administrador: usuários, perfis e bloqueio de acesso. O painel administrativo não gerencia turmas.
+- Administrador: usuários, perfis, bloqueio de acesso e confirmação de e-mail no Supabase Auth. O painel administrativo não gerencia turmas.
 - Avaliação calculada por funções PostgreSQL, RLS e evidências em bucket privado.
 - Voo livre público e treino sem nota em /missao.html?missao=primeiro-voo.
 - Login por e-mail, recuperação de senha e integração Google, dependente da configuração do provedor.
@@ -28,6 +28,8 @@ O administrador inicial é admin@admin.com, com a senha definida em ADMIN_INITIA
 Veja supabase/SETUP.md para migrações e administrador, e docs/GUIA_LOGIN_GOOGLE.md para OAuth. A Vercel usa npm run build e dist; api/session.js é uma função de servidor que valida a sessão com @supabase/server.
 
 Configure SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY e SUPABASE_JWKS_URL na Vercel. O endpoint de sessão usa o token do próprio usuário e não precisa de chave secret. Não publique senha PostgreSQL, senha inicial do administrador ou .env.
+
+A confirmação administrativa de e-mail usa `api/user-email.js` e requer `SUPABASE_SECRET_KEY` somente no servidor. Em desenvolvimento, `npm run dev` carrega o `.env`; reinicie o servidor após configurá-lo. Veja [configuração e verificação](docs/CONFIRMACAO_EMAIL.md).
 
 ## Verificação
 
