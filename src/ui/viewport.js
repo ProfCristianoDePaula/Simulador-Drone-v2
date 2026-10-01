@@ -6,7 +6,7 @@
   function fitDesktop(){
     root.classList.toggle('desktop-fit',desktop.matches);
     if(!desktop.matches){wrap.style.transform='';wrap.style.left='';wrap.style.top='';return}
-    const training=!!document.getElementById('training-panel');
+    const panel=document.getElementById('training-panel'),training=!!panel&&!panel.hidden;
     const width=document.documentElement.clientWidth-(training&&innerWidth>=1000?360:0),height=window.innerHeight-(training&&innerWidth<1000?280:0);
     const scale=Math.min(width/1220,height/1040);
     wrap.style.transform=`scale(${scale})`;
@@ -15,6 +15,7 @@
     window.dispatchEvent(new Event('desktopfit'));
   }
   window.addEventListener('resize',fitDesktop);
+  window.addEventListener('trainingpanelchange',fitDesktop);
   desktop.addEventListener('change',fitDesktop);
   fitDesktop();
 })();

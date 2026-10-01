@@ -1,5 +1,6 @@
 import {goalCriteria} from './criteria.js';
 import {navigationGuidance} from './navigation.js';
+import {createMissionPanel} from './panel.js';
 import '../ui/viewport.js';
 import {bootSimulator} from '../simulator/engine.js';
 import {missionById,preChecklist,postChecklist} from './catalog.js';
@@ -7,6 +8,7 @@ import {createEvaluator} from './evaluator.js';
 import {getClient,authMessage} from '../services/supabase.js';
 import {saveDraft,getDraft,deleteDraft} from './drafts.js';
 const root=document.getElementById('training-content');
+const missionPanel=createMissionPanel({panel:document.getElementById('training-panel'),toggle:document.getElementById('mission-panel-toggle'),close:document.getElementById('mission-panel-close'),stepLabel:document.getElementById('mission-panel-step')});
 const params=new URLSearchParams(location.search),assignmentId=params.get('atividade');
 let mission,client,user,bridge,evaluator,attempt,draftKey,phase='prep',clock=0,sampleClock=0,saveClock=0,lastGoal=-1,crashLogged=false;
 let payload={events:[],pre:[],post:[],quiz:-1,report:'',initial:null};let media=[];let busy=false;
@@ -29,7 +31,7 @@ const el=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text
 function status(text){let box=document.getElementById('training-status');if(!box){box=el('p','');box.id='training-status';box.setAttribute('role','status');root.append(box);}box.textContent=text;}
 function button(label,handler){const b=el('button',label);b.addEventListener('click',async()=>{if(busy)return;busy=true;b.disabled=true;try{await handler();}catch(error){status(authMessage(error));}finally{busy=false;b.disabled=false;}});return b;}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
-function heading(){root.replaceChildren(el('span',assignmentId?'ATIVIDADE AVALIADA':'TREINO — SEM NOTA OFICIAL','badge'),el('h1',mission.title));}
+function heading(){root.replaceChildren(el('span',assignmentId?'ATIVIDADE AVALIADA':'TREINO — SEM NOTA OFICIAL','badge'),el('h1',mission.title));missionPanel.setPhase(phase);}
 function checks(items,values){const box=el('div','');items.forEach((text,i)=>{const label=el('label','');const input=el('input','');input.type='checkbox';input.checked=!!values[i];input.addEventListener('change',()=>values[i]=input.checked);label.append(input,document.createTextNode(text));box.append(label);});return box;}
 function persist(){if(!draftKey)return Promise.resolve();return saveDraft(draftKey,{attempt,payload,media,missionId:mission.id,phase,clock});}
 function feed(event){payload.events.push(event);evaluator.feed(event);}
@@ -57,6 +59,7 @@ function tick(dt,s){
  if(phase!=='flight')return;clock+=dt;sampleClock+=dt;saveClock+=dt;
  if(sampleClock>=.5||s.crashed&&!crashLogged){sampleClock=0;crashLogged||=s.crashed;feed({type:'frame',t:clock,s});}
  const p=evaluator.progress;
+ missionPanel.setStep(p.index,mission.goals.length,mission.goals[p.index]?.label);
  const stepStatus=document.getElementById('mission-step-status');
  if(stepStatus){const g=mission.goals[p.index];stepStatus.textContent=s.paused?'Avaliação pausada — retome o voo':!s.power?'Avaliação parada — ligue o controle':g?`Etapa ${p.index+1}/${mission.goals.length} · ${g.label} · ${p.hold.toFixed(1)}/${g.seconds} s`:'Todos os objetivos concluídos';}
  if(p.index!==lastGoal){lastGoal=p.index;bridge?.highlight(p.index);const list=document.getElementById('goals');if(list)[...list.children].forEach((n,i)=>n.className=i<p.index?'done':i===p.index?'current':'');

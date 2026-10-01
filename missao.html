@@ -168,7 +168,8 @@
 
 
 
-<aside id="training-panel" aria-label="Missão"><a href="/painel.html">← Painel</a><div id="training-content"><p>Preparando missão…</p></div></aside>
+<button id="mission-panel-toggle" type="button" aria-controls="training-panel" aria-expanded="true" aria-label="Abrir painel da missão" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 5H5v16h14V5h-3M9 3h6v4H9zM8 12l2 2 5-4M8 18h8"/></svg><span id="mission-panel-step">Ver missão</span></button>
+<aside id="training-panel" aria-label="Missão" tabindex="-1"><div class="mission-panel-toolbar"><a href="/painel.html">← Painel</a><button id="mission-panel-close" type="button" aria-controls="training-panel" hidden>Ocultar painel ↓</button></div><div id="training-content"><p>Preparando missão…</p></div></aside>
 <script type="module" src="/src/training/session.js"></script>
 </body>
 </html>
