@@ -1,3 +1,4 @@
+import {createSceneCapture,createCaptureDelivery} from './capture.js';
 import {createMissionScenery} from '../training/scenery.js';
 import {clamp,rad,deg} from '../core/math.js';
 import {createFlightState} from './state.js';
@@ -727,69 +728,25 @@ export async function bootSimulator(options={}){
   const {physics} = createFlightDynamics({S,geo,obstacles,axes,keys,distance,effectiveH,effectiveD,sensorsAvailable,warn,resetInputs,notify,startRTH,autopilot});
 
   // ---------- FOTO E VÍDEO DA CENA WEBGL ----------
-  let recording=null;
   function download(blob,name){
     const a=document.createElement("a"),url=URL.createObjectURL(blob);
     a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),10000);
   }
-  async function photo(){
-    try{
-      updateCamera();renderer.render(scene,camera);
-      const blob=await new Promise(resolve=>renderer.domElement.toBlob(resolve,"image/png"));
-      if(!blob)throw Error("Não foi possível gerar a imagem.");
-      if(options.onCapture)await options.onCapture(blob,"photo",snapshot());
-      else download(blob,"mini4-foto-simulada-"+Date.now()+".png");
-      notify(options.onCapture?"Foto registrada na missão.":"Foto da cena 3D baixada. Não inclui os menus do controle.");
-    }catch(e){notify("Falha na captura: "+e.message)}
-  }
-  function stopRecord(){
-    if(recording&&recording.rec.state!=="inactive")recording.rec.stop();
-  }
-  function record(){
-    if(recording){stopRecord();return}
-    if(!window.MediaRecorder||!renderer.domElement.captureStream){
-      notify("Este navegador não oferece gravação de canvas. Use Foto ou outro navegador.");return;
-    }
-    let stream;
-    try{
-      stream=renderer.domElement.captureStream(24);
-      const mime=["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"]
-        .find(x=>MediaRecorder.isTypeSupported(x));
-      const rec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
-      const session={rec,stream,chunks:[],timer:null};
-      recording=session;
-      rec.ondataavailable=e=>{if(e.data.size)session.chunks.push(e.data)};
-      rec.onstop=()=>{
-        clearTimeout(session.timer);session.stream.getTracks().forEach(t=>t.stop());
-        const type=rec.mimeType||"video/webm";
-        if(session.chunks.length){
-          const blob=new Blob(session.chunks,{type});
-          if(options.onCapture)Promise.resolve(options.onCapture(blob,"video",snapshot())).catch(e=>notify(e.message));
-          else download(blob,"mini4-video-simulado-"+Date.now()+(type.includes("mp4")?".mp4":".webm"));
-        }
-        if(recording===session)recording=null;
-        $("recordButton").classList.remove("recording");
-        notify("Gravação encerrada. O vídeo contém somente a cena simulada.");
-      };
-      rec.onerror=()=>{
-        notify("O navegador encontrou um erro na gravação.");
-        if(rec.state!=="inactive")rec.stop();
-        else{
-          session.stream.getTracks().forEach(t=>t.stop());
-          clearTimeout(session.timer);recording=null;
-          $("recordButton").classList.remove("recording");
-        }
-      };
-      rec.start(1000);
-      session.timer=setTimeout(()=>{if(recording===session)stopRecord()},120000);
-      $("recordButton").classList.add("recording");
-      notify("Gravando a câmera simulada. Limite de 2 minutos por clipe.");
-    }catch(e){
-      stream?.getTracks().forEach(t=>t.stop());
-      recording=null;notify("Gravação indisponível: "+e.message);
-    }
-  }
+  const captures=createSceneCapture({
+    canvas:renderer.domElement,render(){updateCamera();renderer.render(scene,camera);},snapshot,
+    beforeCapture:options.beforeCapture,
+    maxBytes:options.mission?10485760:Infinity,
+    notify(text){notify(text);options.onCaptureNotice?.(text);},
+    onState(active,saving){
+      const button=$("recordButton");button.classList.toggle("recording",active);
+      button.disabled=saving;button.setAttribute("aria-label",saving?"Salvando vídeo":active?"Parar e salvar vídeo":"Iniciar gravação de vídeo");
+      button.title=button.getAttribute("aria-label");
+      options.onCaptureState?.(active,saving);
+    },
+    save:createCaptureDelivery({download,onCapture:options.onCapture})
+  });
+  const photo=()=>captures.photo(),record=()=>captures.record(),stopRecord=()=>captures.stop();
 
   // ---------- SELEÇÃO DO ALVO NA IMAGEM ----------
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
@@ -949,7 +906,7 @@ export async function bootSimulator(options={}){
           ${choice("Exposição didática","exposure",["Auto","Pro"])}
           ${field("Compensação visual EV","ev",-2,2,.1)}
           ${checkbox("Mostrar linhas de grade","grid")}
-          <div class="row">${B("Baixar foto PNG","photo")}${B("Gravar / parar vídeo","record")}</div>
+          <div class="row">${B(options.mission?"Registrar foto na missão":"Baixar foto PNG","photo")}${B("Gravar / parar vídeo","record")}</div>
           <p>A imagem muda com posição, altura, orientação, gimbal e zoom.
           EV altera o brilho da renderização. Não há simulação física de ISO,
           obturador, sensor ou qualidade óptica do Mini 4 Pro.</p>
@@ -1079,6 +1036,7 @@ export async function bootSimulator(options={}){
       case "Guia":html=guideHtml();break;
       case "Ajuda":
         html=`<h2>Primeiro voo</h2>
+          <p><a class="manual-link" href="/ajuda.html?perfil=simulator#primeiro-voo" target="_blank" rel="noopener">Abrir manual interativo completo ↗</a></p>
           <ol class="list">
             <li>Feche este menu e clique em Decolar.</li>
             <li>Use W/S para altura; A/D para giro; setas para deslocamento.</li>
@@ -1248,7 +1206,7 @@ export async function bootSimulator(options={}){
     $("takeoffButton").textContent=S.flying?"↓ Pousar":"↑ Decolar";
     $("pauseButton").textContent=S.paused?"Retomar":"Pausar";
     $("cameraInfo").innerHTML=
-      `${recording?"● REC":"SIM"} · ${S.zoom.toFixed(1)}×<br>Gimbal ${Math.round(S.gimbal)}°`;
+      `${captures.recording?"● REC":captures.saving?"SALVANDO":"SIM"} · ${S.zoom.toFixed(1)}×<br>Gimbal ${Math.round(S.gimbal)}°`;
     $("gridOverlay").hidden=!S.grid||S.mapFull;
     $("status").textContent=!S.power?"Desligado":
       S.crashed?"Colisão — reinicie":
@@ -1270,7 +1228,7 @@ export async function bootSimulator(options={}){
       }
     }
   }
-  function snapshot(){return {paused:S.paused||$("settings").open,power:S.power,x:S.x,z:S.z,h:S.h,yaw:S.yaw,gimbal:S.gimbal,zoom:S.zoom,speed:S.speed,battery:S.battery,flying:S.flying,crashed:S.crashed,power:S.power,exposure:S.exposure,ev:S.ev,grid:S.grid,mode:S.mode,gps:S.gps,link:S.link,lossAction:S.lossAction,homeValid:S.homeValid,rthH:S.rthH,maxH:S.maxH,maxD:S.maxD,avoid:S.avoid,light:S.light,calibrated:S.calStep>=calSteps[S.cal].length,auto:S.auto?.name||S.auto?.kind||'',recording:!!recording};}
+  function snapshot(){return {paused:S.paused||$("settings").open,power:S.power,x:S.x,z:S.z,h:S.h,yaw:S.yaw,gimbal:S.gimbal,zoom:S.zoom,speed:S.speed,battery:S.battery,flying:S.flying,crashed:S.crashed,power:S.power,exposure:S.exposure,ev:S.ev,grid:S.grid,mode:S.mode,gps:S.gps,link:S.link,lossAction:S.lossAction,homeValid:S.homeValid,rthH:S.rthH,maxH:S.maxH,maxD:S.maxD,avoid:S.avoid,light:S.light,calibrated:S.calStep>=calSteps[S.cal].length,auto:S.auto?.name||S.auto?.kind||'',recording:captures.recording,capturePending:captures.saving};}
   function frame(now){
     requestAnimationFrame(frame);
     const dt=Math.min(.05,(now-previous)/1000);previous=now;
@@ -1298,6 +1256,6 @@ export async function bootSimulator(options={}){
   swapView(false);
   if(options.mission){mapCaption();$("flightCredit").hidden=true;$("mapCredit").hidden=true;}else locate();
   requestAnimationFrame(frame);
-  return {snapshot,start(){missionReady=true;S.paused=false;},pause(){S.paused=true;resetInputs();},highlight(index){missionScenery?.highlight(index);},inject(values){Object.assign(S,values);},stopRecording:stopRecord};
+  return {snapshot,start(){missionReady=true;S.paused=false;},pause(){S.paused=true;resetInputs();},highlight(index){missionScenery?.highlight(index);},inject(values){Object.assign(S,values);},takePhoto:photo,toggleRecording:record,stopRecording:stopRecord,flushCaptures:()=>captures.flush()};
 }
 

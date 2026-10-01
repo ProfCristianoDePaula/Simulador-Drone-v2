@@ -15,6 +15,9 @@ O administrador inicial é admin@admin.com, com a senha definida em ADMIN_INITIA
 
 ## Funcionalidades implementadas
 
+- [Ajuda e manual interativo](ajuda.html): guias para alunos e professores, busca por assunto, etapas de leitura e consulta dos comandos do simulador. Disponível também pelo painel e pelo menu de ajuda do simulador.
+- Capturas das missões com prévia de fotos, reprodução de vídeos e download. O encerramento do voo aguarda as capturas; a atividade avaliada envia as evidências ao finalizar a entrega.
+
 - Doze missões com cenários, objetivos sequenciais, telemetria, fotos/vídeos e checklists. Cada missão vale 100 pontos: pré-voo 20, pilotagem 30, objetivos 35 e pós-voo 15.
 - Alunos: inscrição por código, atividades, tentativas, notas, histórico e recuperação de entregas locais.
 - Professores: suas turmas, matrículas, atividades, prazos, tentativas, revisão justificada e exportação CSV.

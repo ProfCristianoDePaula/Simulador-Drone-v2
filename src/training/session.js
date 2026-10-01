@@ -10,6 +10,21 @@ const root=document.getElementById('training-content');
 const params=new URLSearchParams(location.search),assignmentId=params.get('atividade');
 let mission,client,user,bridge,evaluator,attempt,draftKey,phase='prep',clock=0,sampleClock=0,saveClock=0,lastGoal=-1,crashLogged=false;
 let payload={events:[],pre:[],post:[],quiz:-1,report:'',initial:null};let media=[];let busy=false;
+const mediaUrls=new Map();
+function renderCaptures(){
+ let gallery=document.getElementById('mission-captures');
+ if(!gallery){gallery=el('section','','mission-captures');gallery.id='mission-captures';root.append(gallery);}
+ gallery.replaceChildren(el('h2',`Capturas da missão (${media.length}/30)`));
+ gallery.append(el('p',assignmentId?'Confira suas fotos e vídeos. Eles serão enviados ao finalizar a entrega.':'Treino sem envio ao banco. Baixe as capturas que quiser guardar antes de sair.'));
+ if(!media.length){gallery.append(el('p','Nenhuma captura ainda. Inicie a missão e use Foto ou o botão de gravação.'));return;}
+ for(const [index,item] of media.entries()){
+  if(!mediaUrls.has(item.id))mediaUrls.set(item.id,URL.createObjectURL(item.blob));const url=mediaUrls.get(item.id);
+  const card=el('div','','capture-card'),label=`${item.kind==='photo'?'Foto':'Vídeo'} ${index+1}`,preview=el(item.kind==='photo'?'img':'video','');
+  if(item.kind==='photo'){preview.alt=label;preview.loading='lazy';}else{preview.controls=true;preview.preload='metadata';preview.playsInline=true;preview.setAttribute('aria-label',label);}
+  preview.src=url;const download=el('a',`Baixar ${label.toLowerCase()}`);download.href=url;download.download=`mini4-${mission.id}-${index+1}.${item.kind==='photo'?'png':item.blob.type.includes('mp4')?'mp4':'webm'}`;
+  card.append(el('strong',`${label} · ${(item.blob.size/1048576).toFixed(2)} MB`),preview,download);gallery.append(card);
+ }
+}
 const el=(tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text;if(cls)n.className=cls;return n;};
 function status(text){let box=document.getElementById('training-status');if(!box){box=el('p','');box.id='training-status';box.setAttribute('role','status');root.append(box);}box.textContent=text;}
 function button(label,handler){const b=el('button',label);b.addEventListener('click',async()=>{if(busy)return;busy=true;b.disabled=true;try{await handler();}catch(error){status(authMessage(error));}finally{busy=false;b.disabled=false;}});return b;}
@@ -18,6 +33,12 @@ function heading(){root.replaceChildren(el('span',assignmentId?'ATIVIDADE AVALIA
 function checks(items,values){const box=el('div','');items.forEach((text,i)=>{const label=el('label','');const input=el('input','');input.type='checkbox';input.checked=!!values[i];input.addEventListener('change',()=>values[i]=input.checked);label.append(input,document.createTextNode(text));box.append(label);});return box;}
 function persist(){if(!draftKey)return Promise.resolve();return saveDraft(draftKey,{attempt,payload,media,missionId:mission.id,phase,clock});}
 function feed(event){payload.events.push(event);evaluator.feed(event);}
+function recordingState(active,saving){
+ const control=document.getElementById('mission-record-video');
+ if(control){control.disabled=saving;control.textContent=saving?'Finalizando arquivo de vídeo…':active?'Parar e salvar vídeo':'Gravar vídeo';control.setAttribute('aria-pressed',String(active));}
+ if(active)status('Gravando vídeo. Clique em “Parar e salvar vídeo” para gerar o arquivo.');
+ else if(saving)status('Finalizando o vídeo. Aguarde o arquivo e a prévia em Capturas da missão.');
+}
 function flightView(){
  heading();root.append(el('p','Conclua os objetivos na ordem. Os marcadores numerados aparecem no cenário. Menu •••: ajustes; WP: rota; QS: tomadas automáticas.'));
  const list=el('ol','');list.id='goals';mission.goals.forEach(g=>{const item=el('li',''),details=el('details','');details.append(el('summary',g.label),el('p',goalCriteria(g)));item.append(details);list.append(item);});root.append(list);
@@ -25,8 +46,11 @@ function flightView(){
  const guidance=el('p','');guidance.id='navigation-guidance';root.append(el('h2','Guia do objetivo atual'),guidance);
  const help=el('details',''),summary=el('summary','Como ler posição e comandos');help.append(summary,el('p','Coordenadas locais do simulador, em metros: a base é X 0 / Z 0. X positivo = leste; X negativo = oeste. Z negativo = norte; Z positivo = sul. H = altura. Rumo 0° = norte, 90° = leste. As setas movem o drone em relação à direção para onde ele aponta; A/D giram. W/S sobem/descem. Os números no mapa indicam os objetivos. Siga os marcadores e mantenha distância dos obstáculos; o guia indica direção, não uma rota livre de obstáculos.'));root.append(help);
  const metric=el('p','');metric.id='mission-metrics';root.append(metric);
+ root.append(button('Tirar e baixar foto',async()=>{await bridge.takePhoto();}));
+ const recordVideo=el('button','Gravar vídeo');recordVideo.id='mission-record-video';recordVideo.type='button';recordVideo.setAttribute('aria-pressed','false');recordVideo.addEventListener('click',()=>bridge.toggleRecording());root.append(recordVideo);
  root.append(button('Encerrar voo e preencher pós-voo',finishFlight));
  root.append(button('Abandonar tentativa',async()=>{bridge.pause();if(attempt)await rpc('academy_abandon_attempt',{tid:attempt.id});await deleteDraft(draftKey||'practice');phase='abandoned';location.assign('/painel.html');}));
+ renderCaptures();
  if(!window.MediaRecorder)status('Este navegador não oferece vídeo. Use um navegador compatível nas missões de filmagem.');
 }
 function tick(dt,s){
@@ -51,10 +75,12 @@ function tick(dt,s){
 }
 async function capture(blob,kind,s){
  if(phase!=='flight')throw new Error('Inicie a missão antes de capturar evidências.');
+ if(!blob?.size)throw new Error('A captura está vazia. Faça uma nova captura.');
  if(blob.size>10485760)throw new Error('Clipe maior que 10 MB. Grave tomadas mais curtas.');
  if(media.length>=30)throw new Error('Limite de 30 evidências por tentativa.');
- const id=crypto.randomUUID();media.push({id,blob,kind});feed({type:kind,t:clock,s,local_id:id});await persist();
- status(`${kind==='photo'?'Foto registrada':'Vídeo registrado'} localmente. ${assignmentId?'Será enviado ao entregar.':'Treino sem envio ao banco.'}`);
+ const id=crypto.randomUUID();media.push({id,blob,kind});feed({type:kind,t:clock,s,local_id:id});renderCaptures();
+ try{await persist();}catch{status('Captura disponível nesta página, mas o armazenamento local falhou. Baixe uma cópia e mantenha a página aberta para entregar.');return;}
+ status(`${kind==='photo'?'Foto registrada':'Vídeo registrado'}. Confira a prévia em Capturas da missão. ${assignmentId?'Será enviado ao entregar.':'Use Baixar para guardar uma cópia.'}`);
 }
 function prep(){
  heading();root.append(el('p',mission.brief));const briefing=el('details','');briefing.append(el('summary','Plano de voo e critérios de todas as etapas'));const steps=el('ol','');mission.goals.forEach(g=>steps.append(el('li',g.label+' — '+goalCriteria(g))));briefing.append(steps);root.append(briefing,el('h2','Checklist pré-voo')); 
@@ -70,19 +96,21 @@ function prep(){
  }));
 }
 async function finishFlight(){
- const s=bridge.snapshot();if(s.flying)throw new Error('Pouse antes de encerrar a missão.');if(s.recording)throw new Error('Pare a gravação antes de encerrar.');
- bridge.pause();feed({type:'frame',t:clock,s});phase='post';showPost();await persist();
+ if(bridge.snapshot().flying)throw new Error('Pouse antes de encerrar a missão.');
+ bridge.pause();status('Finalizando as capturas antes do pós-voo…');await bridge.flushCaptures();
+ const s=bridge.snapshot();feed({type:'frame',t:clock,s});phase='post';showPost();await persist();
 }
 function showPost(message=''){
  heading();root.append(el('h2','Checklist pós-voo'));if(!payload.post.length)payload.post=Array(6).fill(false);root.append(checks(postChecklist,payload.post));
  const label=el('label','Relatório: descreva o voo, as ocorrências e o que pode melhorar (5–4.000 caracteres).'),report=el('textarea','');report.maxLength=4000;report.value=payload.report;report.addEventListener('input',()=>payload.report=report.value);label.append(report);root.append(label);
  root.append(button(assignmentId?'Enviar evidências e finalizar':'Concluir treino',submit));
  root.append(button('Voltar ao voo',()=>{if(phase==='recovered')throw new Error('Tentativa interrompida não pode retomar a física. Entregue o registro ou abandone pelo painel.');phase='flight';flightView();bridge.start();}));
+ renderCaptures();
  if(message)status(message);
 }
 async function submit(){
  if(!payload.post.every(Boolean)||payload.report.trim().length<5)throw new Error('Conclua o pós-voo e escreva pelo menos 5 caracteres.');
- if(!assignmentId){phase='done';heading();const p=evaluator.progress;root.append(el('h2','Treino concluído'),el('p',`${p.index}/${mission.goals.length} objetivos${p.critical?' · Falha crítica: refaça o exercício.':''}. Treino sem nota oficial.`),button('Treinar novamente',()=>location.reload()));return;}
+ if(!assignmentId){phase='done';heading();const p=evaluator.progress;root.append(el('h2','Treino concluído'),el('p',`${p.index}/${mission.goals.length} objetivos${p.critical?' · Falha crítica: refaça o exercício.':''}. Treino sem nota oficial.`),button('Treinar novamente',()=>location.reload()));renderCaptures();return;}
  status('Enviando evidências. Não feche esta página…');await persist();
  for(const item of media){
   let event=payload.events.find(e=>e.local_id===item.id);if(event.evidence_id)continue;
@@ -96,6 +124,7 @@ async function submit(){
  const result=await rpc('academy_submit_attempt',{tid:attempt.id,submission:payload});phase='done';await deleteDraft(draftKey);heading();root.append(el('h2',`${result.score}/100 pontos`),el('p',result.passed?'Aprovado':'Refazer — consulte os critérios no painel'));
  for(const [key,label] of Object.entries({preFlight:'Pré-voo',piloting:'Pilotagem',objectives:'Objetivos',postFlight:'Pós-voo'}))root.append(el('p',`${label}: ${result.breakdown[key]} pontos`));
  root.append(el('p','Entrega confirmada pelo Supabase.'));const link=el('a','Ver meu histórico');link.href='/painel.html';root.append(link);
+ renderCaptures();document.querySelector('#mission-captures p').textContent='Capturas enviadas com a entrega. Você também pode baixar uma cópia.';
 }
 async function init(){
  try{
@@ -107,9 +136,10 @@ async function init(){
   }
   if(!mission)throw new Error('Missão não encontrada.');
   evaluator=createEvaluator(mission);payload.events.forEach(e=>evaluator.feed(e));
-  bridge=await bootSimulator({mission,onTick:tick,onCapture:capture});
+  bridge=await bootSimulator({mission,onTick:tick,onCapture:capture,onCaptureNotice:status,onCaptureState:recordingState,beforeCapture(){if(phase!=='flight')throw new Error('Inicie a missão antes de fotografar ou gravar.');if(media.length>=30)throw new Error('Limite de 30 evidências por tentativa.');}});
   if(phase==='recovered')showPost('Registro recuperado. Você pode reenviar uma entrega que falhou. Voos interrompidos no ar devem ser abandonados no painel.');else prep();
  }catch(error){root.replaceChildren(el('h1','Não foi possível iniciar'));status(authMessage(error));}
 }
 window.addEventListener('beforeunload',event=>{if(['flight','post'].includes(phase)){event.preventDefault();event.returnValue='';}});
+window.addEventListener('pagehide',()=>{for(const url of mediaUrls.values())URL.revokeObjectURL(url);mediaUrls.clear();});
 init();

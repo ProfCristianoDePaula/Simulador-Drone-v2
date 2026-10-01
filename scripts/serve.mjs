@@ -15,8 +15,9 @@ http.createServer(async(req,res)=>{
     if(pathname === '/missao') pathname = '/missao.html';
     if(pathname === '/recuperar') pathname = '/recuperar.html';
     if(pathname === '/painel') pathname = '/painel.html';
+    if(pathname === '/ajuda') pathname = '/ajuda.html';
     if(pathname === '/simulador') pathname = '/simulador.html';
-    if(!['/','/favicon.ico','/index.html','/simulador.html','/painel.html','/missao.html','/recuperar.html'].includes(pathname) && !pathname.startsWith('/src/')) throw new Error('Not found');
+    if(!['/','/favicon.ico','/index.html','/simulador.html','/painel.html','/missao.html','/recuperar.html','/ajuda.html'].includes(pathname) && !pathname.startsWith('/src/')) throw new Error('Not found');
     const target = path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
     if(!target.startsWith(root+path.sep)) throw new Error('Not found');
     const body = await fs.readFile(target);

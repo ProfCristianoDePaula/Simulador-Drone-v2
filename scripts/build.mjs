@@ -9,5 +9,6 @@ await fs.copyFile('painel.html','dist/painel.html');
 
 await fs.copyFile('missao.html','dist/missao.html');
 await fs.copyFile('recuperar.html','dist/recuperar.html');
+await fs.copyFile('ajuda.html','dist/ajuda.html');
 
 await fs.copyFile('favicon.ico','dist/favicon.ico');

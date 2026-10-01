@@ -6,6 +6,7 @@ import {courseMissions} from '../training/catalog.js';
 import {element as el,link,field,choice,csvCell} from './dom.js';
 const main=document.getElementById('academy'),notice=document.getElementById('notice');
 const roleNames={student:'Aluno',teacher:'Professor',superadmin:'Administrador'};
+const helpLink=el('a','Ajuda e manual');helpLink.href='/ajuda.html';helpLink.id='help-link';document.querySelector('header nav').prepend(decorate(helpLink,'activities'));
 let client,profile,classes=[],assignments=[],attempts=[],students=[];
 function button(text,fn){const b=el('button',text);b.addEventListener('click',async()=>{b.disabled=true;notice.textContent='';try{await fn();}catch(error){notice.textContent=authMessage(error);}finally{b.disabled=false;}});return b;}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
@@ -24,6 +25,7 @@ async function loadAcademic(){
  students=profile.role==='teacher'?await query(client.from('academy_profiles').select('id,full_name,email').eq('role','student')):[];
 }
 async function render(){
+ helpLink.href='/ajuda.html?perfil='+(profile.role==='teacher'?'teacher':'student');
  main.replaceChildren();document.body.dataset.role=profile.role;document.getElementById('role-label').replaceChildren(icon(profile.role),document.createTextNode('PAINEL DO '+roleNames[profile.role].toUpperCase()));document.getElementById('welcome').textContent=`Olá, ${profile.full_name||profile.email}`;
  document.getElementById('panel-description').textContent=profile.role==='superadmin'?'Administre acessos e perfis. Professores cuidam das turmas; alunos acompanham suas atividades.':profile.role==='teacher'?'Organize suas turmas, prepare atividades e acompanhe a evolução de cada piloto.':'Seu próximo voo começa aqui. Acompanhe as atividades e pratique para evoluir com segurança.';
  if(!profile.active){main.append(el('p','Seu acesso acadêmico foi desativado. Procure o administrador.'));return;}

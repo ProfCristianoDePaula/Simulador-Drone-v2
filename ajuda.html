@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Manual interativo do Mini 4 Lab para alunos e professores: turmas, atividades, entregas e controles do simulador.">
+  <title>Ajuda e manual interativo — Mini 4 Lab</title>
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="stylesheet" href="/src/styles/dashboard.css">
+  <link rel="stylesheet" href="/src/styles/help.css">
+</head>
+<body>
+  <a class="skip-link" href="#guide-content">Pular para o guia</a>
+  <header><a class="brand" href="/">✣ MINI 4 LAB</a><nav aria-label="Navegação principal"><a href="/">Página inicial</a><a href="/painel.html">Meu painel</a><a href="/simulador.html">Voo livre</a></nav></header>
+  <main class="help-page">
+    <div class="help-intro"><p class="eyebrow">CENTRAL DE AJUDA</p><h1>Aprenda no seu ritmo.</h1><p>Escolha seu perfil, encontre um assunto e siga o passo a passo. Você pode consultar este manual sem entrar na conta.</p></div>
+    <nav id="help-audiences" class="help-audiences" aria-label="Escolha a área do manual"></nav>
+    <div class="help-layout">
+      <aside class="help-sidebar" aria-label="Assuntos do manual">
+        <label for="help-search">Buscar na área selecionada</label><input id="help-search" type="search" placeholder="Ex.: nota, turma, câmera…" autocomplete="off">
+        <button id="help-clear" class="secondary-action" type="button">Limpar busca</button>
+        <p id="help-results" role="status"></p><nav id="help-topics" aria-label="Guias disponíveis"></nav>
+      </aside>
+      <article id="guide-content" class="help-guide" aria-label="Guia passo a passo" tabindex="-1"></article>
+    </div>
+    <p class="help-footnote">O progresso dos guias vale apenas nesta página e não altera notas ou atividades. Simulação didática: nenhum comando é enviado a um drone real.</p>
+    <noscript><p>Ative o JavaScript para usar os guias interativos. No simulador: W/S controla altura, A/D gira e as setas deslocam. Espaço pausa. Para uma atividade com nota, entre pelo painel e escolha Realizar missão.</p></noscript>
+  </main>
+  <script type="module" src="/src/ui/help.js"></script>
+</body>
+</html>

@@ -344,3 +344,4 @@ html.desktop-fit,html.desktop-fit body{width:100%;height:100%;overflow:hidden}
 .telemetry{flex-wrap:wrap;max-width:78%;font-variant-numeric:tabular-nums}
 
 .telemetry{display:flex;flex-direction:column;gap:3px;max-width:78%}.telemetry-primary{display:flex;gap:14px;flex-wrap:wrap}.telemetry-secondary{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#d0e0e5}.telemetry .telemetry-secondary b{font-size:12px;font-weight:500}
+.manual-link{display:inline-flex;align-items:center;padding:9px 12px;border:1px solid #608879;border-radius:7px;color:#a4ebc9;text-decoration:none;font:600 12px system-ui,sans-serif}.manual-link:hover{background:#21433e}.manual-link:focus-visible{outline:3px solid #83dfba;outline-offset:3px}
